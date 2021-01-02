@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "commonjs",
+    "experimentalDecorators": true,
+    "allowJs": true,
+    "declaration": true,
+    "outDir": "./dist",
+    "baseUrl": "./src",
+    "strict": true,
+    "strictNullChecks": false,
+    "types": ["reflect-metadata", "node"]
+  },
+  "exclude": ["node_modules"],
+  "include": ["./src/**/*.ts"]
+}
