@@ -1,13 +1,13 @@
 {
   "name": "mongodb-repository-crud",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Helper for mongoose",
   "main": "dist/index.js",
   "author": "Nguyen Duc Long",
   "license": "MIT",
   "private": false,
   "repository": {
-    "url": "git@github.com:nguyenduclong-ict/mongoose-repository.git",
+    "url": "git@github.com:nguyenduclong-ict/mogodb-repository-curd.git",
     "type": "git"
   },
   "scripts": {
