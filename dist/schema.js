@@ -10,7 +10,7 @@ function Field(config = { type: String }) {
 }
 exports.Field = Field;
 function DeleteDateColumn(config) {
-    config = _.defaultsDeep({
+    config = _.defaultsDeep(config, {
         type: mongoose_1.SchemaTypes.Date,
         default: null,
         columnType: "deleteDate",

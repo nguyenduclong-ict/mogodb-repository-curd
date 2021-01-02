@@ -44,8 +44,6 @@ export class Repository<E extends Document> {
 
   @RepoAction
   async list(context: RepositoryContext<E> = {}): Promise<ListResponse<E>> {
-    console.log(this.name);
-
     const [data, counts] = await Promise.all([
       Repository.populate(
         this.model.find(

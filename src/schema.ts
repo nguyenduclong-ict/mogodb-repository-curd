@@ -8,8 +8,8 @@ export function Field(config: FieldType | FieldType[] = { type: String }) {
   };
 }
 
-export function DeleteDateColumn(config: FieldType) {
-  config = _.defaultsDeep({
+export function DeleteDateColumn(config?: FieldType) {
+  config = _.defaultsDeep(config, {
     type: SchemaTypes.Date,
     default: null,
     columnType: "deleteDate",

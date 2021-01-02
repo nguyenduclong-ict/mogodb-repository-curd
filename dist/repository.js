@@ -30,7 +30,6 @@ class Repository {
         context.new = context.new ?? true;
     }
     async list(context = {}) {
-        console.log(this.name);
         const [data, counts] = await Promise.all([
             Repository.populate(this.model.find(context.query, undefined, _.pick(context, [
                 "skip",
