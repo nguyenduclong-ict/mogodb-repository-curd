@@ -5,6 +5,7 @@ export declare class Repository<E extends Document> {
     connection: Connection;
     schema: Schema;
     model: Model<E>;
+    vitualId: boolean;
     constructor(connection?: Connection);
     private makeDefaultContextList;
     private makeDefaultContextUpdate;

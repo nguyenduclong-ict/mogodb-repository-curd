@@ -61,17 +61,6 @@ export function createConnection(
 
   conn.on("connected", () => {
     console.log("*** connection ready", conn.name);
-    conn.modelNames().forEach((name) => {
-      const model = conn.model(name);
-      model.schema.set("toJSON", {
-        virtuals: true,
-        transform: (doc: any, converted: any) => {
-          converted.id = doc._id;
-          delete converted.__v;
-          delete converted._id;
-        },
-      });
-    });
   });
 
   return conn;

@@ -15,15 +15,37 @@ export class Repository<E extends Document> {
   connection: Connection;
   schema: Schema;
   model: Model<E>;
+  vitualId: boolean = true;
 
   constructor(connection?: Connection) {
     this.connection = connection || this.connection;
+
     if (!this.name) {
       this.name = this.constructor.name.replace(/Repository$/, "");
     }
 
     if (this.connection.modelNames().includes(this.name)) {
       this.connection.deleteModel(this.name);
+    }
+
+    if (this.vitualId) {
+      this.schema.set("toJSON", {
+        virtuals: true,
+        transform: (doc: any, converted: any) => {
+          converted.id = doc._id;
+          delete converted.__v;
+          delete converted._id;
+        },
+      });
+
+      this.schema.set("toObject", {
+        virtuals: true,
+        transform: (doc: any, converted: any) => {
+          converted.id = doc._id;
+          delete converted.__v;
+          delete converted._id;
+        },
+      });
     }
 
     this.model = this.connection.model<E>(this.name, this.schema);

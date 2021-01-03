@@ -41,17 +41,6 @@ function createConnection(uri, options) {
     const conn = mongoose.createConnection(createMongoUri(uri), options);
     conn.on("connected", () => {
         console.log("*** connection ready", conn.name);
-        conn.modelNames().forEach((name) => {
-            const model = conn.model(name);
-            model.schema.set("toJSON", {
-                virtuals: true,
-                transform: (doc, converted) => {
-                    converted.id = doc._id;
-                    delete converted.__v;
-                    delete converted._id;
-                },
-            });
-        });
     });
     return conn;
 }

@@ -11,12 +11,31 @@ const _ = require("lodash");
 const decorator_1 = require("./decorator");
 class Repository {
     constructor(connection) {
+        this.vitualId = true;
         this.connection = connection || this.connection;
         if (!this.name) {
             this.name = this.constructor.name.replace(/Repository$/, "");
         }
         if (this.connection.modelNames().includes(this.name)) {
             this.connection.deleteModel(this.name);
+        }
+        if (this.vitualId) {
+            this.schema.set("toJSON", {
+                virtuals: true,
+                transform: (doc, converted) => {
+                    converted.id = doc._id;
+                    delete converted.__v;
+                    delete converted._id;
+                },
+            });
+            this.schema.set("toObject", {
+                virtuals: true,
+                transform: (doc, converted) => {
+                    converted.id = doc._id;
+                    delete converted.__v;
+                    delete converted._id;
+                },
+            });
         }
         this.model = this.connection.model(this.name, this.schema);
     }
