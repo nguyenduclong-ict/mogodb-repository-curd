@@ -1,4 +1,4 @@
-import { Document, FilterQuery, ObjectId, Schema, SchemaType, SchemaTypeOpts } from "mongoose";
+import { Document, DocumentDefinition, FilterQuery, ObjectId, Schema, SchemaOptions, SchemaType, SchemaTypeOpts, UpdateQuery } from "mongoose";
 export declare type LiteralUnion<T extends U, U = string> = T | (U & {});
 export declare type HookItem = {
     handler: string;
@@ -10,6 +10,15 @@ export interface RepositoryContext<T = any, M = any> extends FindOptions<T> {
     meta?: M & {
         [x: string]: any;
     };
+}
+export interface ContextCreate<T = any, M = any> extends RepositoryContext<T, M> {
+    data?: DocumentDefinition<T>;
+}
+export interface ContextCreateMany<T = any, M = any> extends RepositoryContext<T, M> {
+    data?: Array<DocumentDefinition<T>>;
+}
+export interface ContextUpdate<T = any, M = any> extends RepositoryContext<T, M> {
+    data?: UpdateQuery<T>;
 }
 export interface FindOptions<T> {
     query?: FilterQuery<T>;
@@ -26,6 +35,12 @@ export interface FindOptions<T> {
     new?: boolean;
     projection?: any;
     session?: any;
+    /**
+     * ignore: return document no softDelete,
+     * only: only return document softDeleted,
+     * all: return both
+     */
+    softDelete?: "ignore" | "only" | "all";
 }
 export interface UpdateOperators<D = any> {
     $currentDate?: boolean;
@@ -75,4 +90,7 @@ export interface RepositoryInject {
     name?: string;
     model?: any;
     schema?: any;
+}
+export interface EntityOptions extends SchemaOptions {
+    virtualId?: boolean;
 }

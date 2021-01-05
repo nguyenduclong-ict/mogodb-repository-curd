@@ -1,21 +1,20 @@
 import * as _ from "lodash";
-import {
-  Connection,
-  Document,
-  DocumentDefinition,
-  Model,
-  Schema,
-  UpdateQuery,
-} from "mongoose";
+import { Connection, Document, Model, Schema } from "mongoose";
 import { Hook, RepoAction } from "./decorator";
-import { ListResponse, RepositoryContext } from "./interface";
+import {
+  ContextCreate,
+  ContextCreateMany,
+  ContextUpdate,
+  ListResponse,
+  RepositoryContext,
+} from "./interface";
 
 export class Repository<E extends Document> {
   name: string;
   connection: Connection;
   schema: Schema;
   model: Model<E>;
-  vitualId: boolean = true;
+  #cached: any;
 
   constructor(connection?: Connection) {
     this.connection = connection || this.connection;
@@ -28,35 +27,80 @@ export class Repository<E extends Document> {
       this.connection.deleteModel(this.name);
     }
 
-    if (this.vitualId) {
-      this.schema.set("toJSON", {
-        virtuals: true,
-        transform: (doc: any, converted: any) => {
-          converted.id = doc._id;
-          delete converted.__v;
-          delete converted._id;
-        },
-      });
-
-      this.schema.set("toObject", {
-        virtuals: true,
-        transform: (doc: any, converted: any) => {
-          converted.id = doc._id;
-          delete converted.__v;
-          delete converted._id;
-        },
-      });
-    }
-
     this.model = this.connection.model<E>(this.name, this.schema);
+
+    this.#cached = {
+      softDeletePaths: _.memoize((shema: Schema) => {
+        return _.pickBy(
+          this.schema.paths,
+          (value) => _.get(value, "options.columnType") === "deleteDate"
+        );
+      }),
+      ignoreSoftDeleteQuery: _.memoize((schema: Schema) => {
+        const queryIgnore = {};
+
+        const deleteDatePaths = _.pickBy(
+          schema.paths,
+          (value) => _.get(value, "options.columnType") === "deleteDate"
+        );
+
+        Object.keys(deleteDatePaths).forEach((key) => {
+          _.set(queryIgnore, key, null);
+        });
+
+        return queryIgnore;
+      }),
+      onlySoftDeleteQuery: _.memoize((schema: Schema) => {
+        const queryOnly = {};
+
+        const deleteDatePaths = _.pickBy(
+          this.schema.paths,
+          (value) => _.get(value, "options.columnType") === "deleteDate"
+        );
+
+        Object.keys(deleteDatePaths).forEach((key) => {
+          _.set(queryOnly, key, { $type: "date" });
+        });
+
+        return queryOnly;
+      }),
+    };
   }
 
+  // Soft delete query
+  private get softDeletePaths() {
+    return this.#cached.softDeletePaths(this.schema);
+  }
+
+  private get hasSoftDelete() {
+    return !_.isEmpty(this.softDeletePaths);
+  }
+
+  private get ignoreSoftDeleteQuery() {
+    return this.#cached.ignoreSoftDeleteQuery(this.schema);
+  }
+
+  private get onlySoftDeleteQuery() {
+    return this.#cached.onlySoftDeleteQuery(this.schema);
+  }
+  // End soft delete only
+
   @Hook("before", ["list", "find"], -1)
-  private makeDefaultContextList(context: any = {}) {
+  private makeDefaultContextList(context: RepositoryContext<E> = {}) {
     context.page = context.page || 1;
     context.pageSize = context.pageSize || 100;
     context.limit = context.limit || context.pageSize;
     context.skip = context.skip || context.limit * (context.page - 1);
+    context.softDelete = this.hasSoftDelete
+      ? context.softDelete ?? "ignore"
+      : undefined;
+  }
+
+  @Hook("before", ["findOne"], -1)
+  private makeDefaultContextFindOne(context: RepositoryContext<E> = {}) {
+    context.softDelete = this.hasSoftDelete
+      ? context.softDelete ?? "ignore"
+      : undefined;
   }
 
   @Hook("before", ["update", "updateOne"], -1)
@@ -66,6 +110,19 @@ export class Repository<E extends Document> {
 
   @RepoAction
   async list(context: RepositoryContext<E> = {}): Promise<ListResponse<E>> {
+    // Ignore soft delete document
+    if (context.softDelete === "ignore") {
+      context.query = {
+        $and: [context.query || {}, this.ignoreSoftDeleteQuery],
+      } as any;
+    }
+
+    if (context.softDelete === "only") {
+      context.query = {
+        $and: [context.query || {}, this.onlySoftDeleteQuery],
+      } as any;
+    }
+
     const [data, counts] = await Promise.all([
       Repository.populate(
         this.model.find(
@@ -97,6 +154,19 @@ export class Repository<E extends Document> {
 
   @RepoAction
   async find(context: RepositoryContext<E> = {}): Promise<Document<E>[]> {
+    // Ignore soft delete document
+    if (context.softDelete === "ignore") {
+      context.query = {
+        $and: [context.query || {}, this.ignoreSoftDeleteQuery],
+      } as any;
+    }
+
+    if (context.softDelete === "only") {
+      context.query = {
+        $and: [context.query || {}, this.onlySoftDeleteQuery],
+      } as any;
+    }
+
     return this.model.find(
       context.query as any,
       undefined,
@@ -115,7 +185,20 @@ export class Repository<E extends Document> {
   }
 
   @RepoAction
-  findOne(context: RepositoryContext<E>): Promise<Document<E>> {
+  findOne(context: RepositoryContext<E> = {}): Promise<Document<E>> {
+    // Ignore soft delete document
+    if (context.softDelete === "ignore") {
+      context.query = {
+        $and: [context.query || {}, this.ignoreSoftDeleteQuery],
+      } as any;
+    }
+
+    if (context.softDelete === "only") {
+      context.query = {
+        $and: [context.query || {}, this.onlySoftDeleteQuery],
+      } as any;
+    }
+
     return Repository.populate(
       this.model.findOne(
         context.query as any,
@@ -127,20 +210,21 @@ export class Repository<E extends Document> {
   }
 
   @RepoAction
-  create(
-    context: RepositoryContext<E> & {
-      data?: DocumentDefinition<E> | Array<DocumentDefinition<E>>;
-    } = {}
-  ): Promise<E | E[]> {
+  create(context: ContextCreate<E>): Promise<E> {
     let options: any = _.omitBy({ session: context.session }, _.isNil);
     options = _.isEmpty(options) ? undefined : options;
     return this.model.create(context.data as any, options) as any;
   }
 
   @RepoAction
-  update(
-    context: RepositoryContext<E> & { data?: UpdateQuery<E> } = {}
-  ): Promise<E[]> {
+  createMany(context: ContextCreateMany<E> = {}): Promise<E[]> {
+    let options: any = _.omitBy({ session: context.session }, _.isNil);
+    options = _.isEmpty(options) ? undefined : options;
+    return this.model.create(context.data as any, options) as any;
+  }
+
+  @RepoAction
+  update(context: ContextUpdate<E>): Promise<E[]> {
     if (context.new) {
       return this.model
         .find(context.query as any, undefined, { projection: "id" })
@@ -173,11 +257,7 @@ export class Repository<E extends Document> {
   }
 
   @RepoAction
-  updateOne(
-    context: RepositoryContext<E> & {
-      data?: UpdateQuery<E>;
-    } = {}
-  ): Promise<E> {
+  updateOne(context: ContextUpdate<E>): Promise<E> {
     return Repository.populate(
       this.model.findOneAndUpdate(
         context.query as any,
@@ -189,7 +269,7 @@ export class Repository<E extends Document> {
   }
 
   @RepoAction
-  delete(context: RepositoryContext<E> = {}) {
+  delete(context: RepositoryContext<E>) {
     return this.model.deleteMany(
       context.query as any,
       _.omitBy({ session: context.session }, _.isNil)
@@ -197,7 +277,7 @@ export class Repository<E extends Document> {
   }
 
   @RepoAction
-  softDelete(context: RepositoryContext<E> = {}) {
+  softDelete(context: RepositoryContext<E>) {
     const deleteDatePaths = _.pickBy(
       this.schema.paths,
       (value) => _.get(value, "options.columnType") === "deleteDate"
@@ -217,7 +297,7 @@ export class Repository<E extends Document> {
   }
 
   @RepoAction
-  restoreSoftDelete(context: RepositoryContext<E> = {}) {
+  restoreSoftDelete(context: RepositoryContext<E>) {
     const deleteDatePaths = _.pickBy(
       this.schema.paths,
       (value) => _.get(value, "options.columnType") === "deleteDate"

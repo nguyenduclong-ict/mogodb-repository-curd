@@ -1,5 +1,5 @@
 import { Document, Schema, SchemaOptions, SchemaTypes } from "mongoose";
-import { FieldType } from "./interface";
+import { EntityOptions, FieldType } from "./interface";
 import * as _ from "lodash";
 
 export function Field(config: FieldType | FieldType[] = { type: String }) {
@@ -18,19 +18,42 @@ export function DeleteDateColumn(config?: FieldType) {
   return Field(config);
 }
 
-export function Entity(options: SchemaOptions) {
+export function Entity(options: EntityOptions) {
   return function (target: any) {
     Reflect.defineMetadata("^options", options, target);
   };
 }
 
 export function createSchema<E = any>(EntityClass: any) {
-  const schema: any = {};
+  const schemaDefinition: any = {};
   Reflect.getMetadataKeys(EntityClass).forEach((key: string) => {
     if (!key.startsWith("^"))
-      schema[key] = Reflect.getMetadata(key, EntityClass);
+      schemaDefinition[key] = Reflect.getMetadata(key, EntityClass);
   });
 
-  const options: SchemaOptions = Reflect.getMetadata("^options", EntityClass);
-  return new Schema<Document<E>>(schema, options);
+  const options: EntityOptions = Reflect.getMetadata("^options", EntityClass);
+
+  const schema = new Schema<Document<E>>(schemaDefinition, options);
+
+  if (options?.virtualId) {
+    schema.set("toJSON", {
+      virtuals: true,
+      transform: (doc: any, converted: any) => {
+        converted.id = doc._id;
+        delete converted.__v;
+        delete converted._id;
+      },
+    });
+
+    schema.set("toObject", {
+      virtuals: true,
+      transform: (doc: any, converted: any) => {
+        converted.id = doc._id;
+        delete converted.__v;
+        delete converted._id;
+      },
+    });
+  }
+
+  return schema;
 }

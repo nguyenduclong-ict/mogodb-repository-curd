@@ -43,6 +43,11 @@ export { userSchema };
 
 > `@DeleteDateColumn` decorator will declare deleted column. After you can using `repository.softDelete` to softDelete document
 
+> Default action list, find, findOne only return document has not been softDeleted, set softDelete option on find, list, findOne to:
+> softDelete = 'ignore' : only return document has not been softDeleted (default)
+> softDelete = 'only' : only return document has been softDeleted
+> softDelete = 'all' : return both deleted and not deleted
+
 ### Step 2 - Create Repository
 
 ```typescript

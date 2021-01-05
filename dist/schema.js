@@ -25,12 +25,31 @@ function Entity(options) {
 }
 exports.Entity = Entity;
 function createSchema(EntityClass) {
-    const schema = {};
+    const schemaDefinition = {};
     Reflect.getMetadataKeys(EntityClass).forEach((key) => {
         if (!key.startsWith("^"))
-            schema[key] = Reflect.getMetadata(key, EntityClass);
+            schemaDefinition[key] = Reflect.getMetadata(key, EntityClass);
     });
     const options = Reflect.getMetadata("^options", EntityClass);
-    return new mongoose_1.Schema(schema, options);
+    const schema = new mongoose_1.Schema(schemaDefinition, options);
+    if (options?.virtualId) {
+        schema.set("toJSON", {
+            virtuals: true,
+            transform: (doc, converted) => {
+                converted.id = doc._id;
+                delete converted.__v;
+                delete converted._id;
+            },
+        });
+        schema.set("toObject", {
+            virtuals: true,
+            transform: (doc, converted) => {
+                converted.id = doc._id;
+                delete converted.__v;
+                delete converted._id;
+            },
+        });
+    }
+    return schema;
 }
 exports.createSchema = createSchema;

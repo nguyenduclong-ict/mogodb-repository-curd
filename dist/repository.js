@@ -11,7 +11,6 @@ const _ = require("lodash");
 const decorator_1 = require("./decorator");
 class Repository {
     constructor(connection) {
-        this.vitualId = true;
         this.connection = connection || this.connection;
         if (!this.name) {
             this.name = this.constructor.name.replace(/Repository$/, "");
@@ -19,36 +18,73 @@ class Repository {
         if (this.connection.modelNames().includes(this.name)) {
             this.connection.deleteModel(this.name);
         }
-        if (this.vitualId) {
-            this.schema.set("toJSON", {
-                virtuals: true,
-                transform: (doc, converted) => {
-                    converted.id = doc._id;
-                    delete converted.__v;
-                    delete converted._id;
-                },
-            });
-            this.schema.set("toObject", {
-                virtuals: true,
-                transform: (doc, converted) => {
-                    converted.id = doc._id;
-                    delete converted.__v;
-                    delete converted._id;
-                },
-            });
-        }
         this.model = this.connection.model(this.name, this.schema);
+        this.#cached = {
+            softDeletePaths: _.memoize((shema) => {
+                return _.pickBy(this.schema.paths, (value) => _.get(value, "options.columnType") === "deleteDate");
+            }),
+            ignoreSoftDeleteQuery: _.memoize((schema) => {
+                const queryIgnore = {};
+                const deleteDatePaths = _.pickBy(schema.paths, (value) => _.get(value, "options.columnType") === "deleteDate");
+                Object.keys(deleteDatePaths).forEach((key) => {
+                    _.set(queryIgnore, key, null);
+                });
+                return queryIgnore;
+            }),
+            onlySoftDeleteQuery: _.memoize((schema) => {
+                const queryOnly = {};
+                const deleteDatePaths = _.pickBy(this.schema.paths, (value) => _.get(value, "options.columnType") === "deleteDate");
+                Object.keys(deleteDatePaths).forEach((key) => {
+                    _.set(queryOnly, key, { $type: "date" });
+                });
+                return queryOnly;
+            }),
+        };
     }
+    #cached;
+    // Soft delete query
+    get softDeletePaths() {
+        return this.#cached.softDeletePaths(this.schema);
+    }
+    get hasSoftDelete() {
+        return !_.isEmpty(this.softDeletePaths);
+    }
+    get ignoreSoftDeleteQuery() {
+        return this.#cached.ignoreSoftDeleteQuery(this.schema);
+    }
+    get onlySoftDeleteQuery() {
+        return this.#cached.onlySoftDeleteQuery(this.schema);
+    }
+    // End soft delete only
     makeDefaultContextList(context = {}) {
         context.page = context.page || 1;
         context.pageSize = context.pageSize || 100;
         context.limit = context.limit || context.pageSize;
         context.skip = context.skip || context.limit * (context.page - 1);
+        context.softDelete = this.hasSoftDelete
+            ? context.softDelete ?? "ignore"
+            : undefined;
+    }
+    makeDefaultContextFindOne(context = {}) {
+        context.softDelete = this.hasSoftDelete
+            ? context.softDelete ?? "ignore"
+            : undefined;
     }
     makeDefaultContextUpdate(context = {}) {
         context.new = context.new ?? true;
     }
     async list(context = {}) {
+        // Ignore soft delete document
+        if (context.softDelete === "ignore") {
+            context.query = {
+                $and: [context.query || {}, this.ignoreSoftDeleteQuery],
+            };
+        }
+        if (context.softDelete === "only") {
+            context.query = {
+                $and: [context.query || {}, this.onlySoftDeleteQuery],
+            };
+        }
         const [data, counts] = await Promise.all([
             Repository.populate(this.model.find(context.query, undefined, _.pick(context, [
                 "skip",
@@ -70,6 +106,17 @@ class Repository {
         };
     }
     async find(context = {}) {
+        // Ignore soft delete document
+        if (context.softDelete === "ignore") {
+            context.query = {
+                $and: [context.query || {}, this.ignoreSoftDeleteQuery],
+            };
+        }
+        if (context.softDelete === "only") {
+            context.query = {
+                $and: [context.query || {}, this.onlySoftDeleteQuery],
+            };
+        }
         return this.model.find(context.query, undefined, _.omitBy(_.pick(context, [
             "populate",
             "skip",
@@ -79,15 +126,31 @@ class Repository {
             "session",
         ]), _.isNil));
     }
-    findOne(context) {
+    findOne(context = {}) {
+        // Ignore soft delete document
+        if (context.softDelete === "ignore") {
+            context.query = {
+                $and: [context.query || {}, this.ignoreSoftDeleteQuery],
+            };
+        }
+        if (context.softDelete === "only") {
+            context.query = {
+                $and: [context.query || {}, this.onlySoftDeleteQuery],
+            };
+        }
         return Repository.populate(this.model.findOne(context.query, undefined, _.omitBy(_.pick(context, ["projection", "session"]), _.isNil)), context.populates);
     }
-    create(context = {}) {
+    create(context) {
         let options = _.omitBy({ session: context.session }, _.isNil);
         options = _.isEmpty(options) ? undefined : options;
         return this.model.create(context.data, options);
     }
-    update(context = {}) {
+    createMany(context = {}) {
+        let options = _.omitBy({ session: context.session }, _.isNil);
+        options = _.isEmpty(options) ? undefined : options;
+        return this.model.create(context.data, options);
+    }
+    update(context) {
         if (context.new) {
             return this.model
                 .find(context.query, undefined, { projection: "id" })
@@ -101,13 +164,13 @@ class Repository {
             return this.model.updateMany(context.query, context.data, _.omitBy({ session: context.session }, _.isNil));
         }
     }
-    updateOne(context = {}) {
+    updateOne(context) {
         return Repository.populate(this.model.findOneAndUpdate(context.query, context.data, _.omitBy(_.pick(context, ["projecton", "session", "new"]), _.isNil)), context.populates);
     }
-    delete(context = {}) {
+    delete(context) {
         return this.model.deleteMany(context.query, _.omitBy({ session: context.session }, _.isNil));
     }
-    softDelete(context = {}) {
+    softDelete(context) {
         const deleteDatePaths = _.pickBy(this.schema.paths, (value) => _.get(value, "options.columnType") === "deleteDate");
         if (_.isEmpty(deleteDatePaths)) {
             throw new Error("Cannot find at least field typeof deleteDate");
@@ -118,7 +181,7 @@ class Repository {
         });
         return this.model.updateMany(context.query, update, { new: true });
     }
-    restoreSoftDelete(context = {}) {
+    restoreSoftDelete(context) {
         const deleteDatePaths = _.pickBy(this.schema.paths, (value) => _.get(value, "options.columnType") === "deleteDate");
         if (_.isEmpty(deleteDatePaths)) {
             throw new Error("Cannot find at least field typeof deleteDate");
@@ -190,6 +253,9 @@ __decorate([
     decorator_1.Hook("before", ["list", "find"], -1)
 ], Repository.prototype, "makeDefaultContextList", null);
 __decorate([
+    decorator_1.Hook("before", ["findOne"], -1)
+], Repository.prototype, "makeDefaultContextFindOne", null);
+__decorate([
     decorator_1.Hook("before", ["update", "updateOne"], -1)
 ], Repository.prototype, "makeDefaultContextUpdate", null);
 __decorate([
@@ -204,6 +270,9 @@ __decorate([
 __decorate([
     decorator_1.RepoAction
 ], Repository.prototype, "create", null);
+__decorate([
+    decorator_1.RepoAction
+], Repository.prototype, "createMany", null);
 __decorate([
     decorator_1.RepoAction
 ], Repository.prototype, "update", null);
