@@ -92,18 +92,18 @@ export interface RepositoryInject {
     schema?: any;
 }
 interface IndexOptions {
-    background: boolean;
-    expireAfterSeconds: number;
-    hidden: boolean;
-    name: string;
-    partialFilterExpression: any;
-    sparse: boolean;
-    storageEngine: any;
-    unique: boolean;
-    weights: number;
-    default_language: string;
-    language_override: string;
-    textIndexVersion: string;
+    background?: boolean;
+    expireAfterSeconds?: number;
+    hidden?: boolean;
+    name?: string;
+    partialFilterExpression?: any;
+    sparse?: boolean;
+    storageEngine?: any;
+    unique?: boolean;
+    weights?: number;
+    default_language?: string;
+    language_override?: string;
+    textIndexVersion?: string;
 }
 export interface IndexSetting<E> {
     fields: {
