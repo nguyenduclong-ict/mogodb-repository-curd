@@ -106,8 +106,10 @@ interface IndexOptions {
     textIndexVersion: string;
 }
 export interface IndexSetting<E> {
-    fields: keyof E;
-    options: IndexOptions;
+    fields: {
+        [K in keyof E]?: 1 | -1 | "text";
+    };
+    options?: IndexOptions;
 }
 export interface EntityOptions<E = any> extends SchemaOptions {
     virtualId?: boolean;
