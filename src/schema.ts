@@ -18,7 +18,12 @@ export function DeleteDateColumn(config?: FieldType) {
   return Field(config);
 }
 
-export function Entity(options: EntityOptions) {
+export function Entity<E = any>(options: EntityOptions<E> = {}) {
+  options = {
+    autoIndex: true,
+    virtualId: true,
+    ...options,
+  };
   return function (target: any) {
     Reflect.defineMetadata("^options", options, target);
   };
@@ -52,6 +57,12 @@ export function createSchema<E = any>(EntityClass: any) {
         delete converted.__v;
         delete converted._id;
       },
+    });
+  }
+
+  if (options.indexes) {
+    options.indexes.forEach((indexSetting) => {
+      schema.index(indexSetting.fields, indexSetting.options);
     });
   }
 

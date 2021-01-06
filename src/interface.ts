@@ -105,6 +105,28 @@ export interface RepositoryInject {
   schema?: any;
 }
 
-export interface EntityOptions extends SchemaOptions {
+interface IndexOptions {
+  background: boolean;
+  expireAfterSeconds: number;
+  hidden: boolean;
+  name: string;
+  partialFilterExpression: any;
+  sparse: boolean;
+  storageEngine: any;
+  unique: boolean;
+  // text index
+  weights: number;
+  default_language: string;
+  language_override: string;
+  textIndexVersion: string;
+}
+
+export interface IndexSetting<E> {
+  fields: keyof E;
+  options: IndexOptions;
+}
+
+export interface EntityOptions<E = any> extends SchemaOptions {
   virtualId?: boolean;
+  indexes?: IndexSetting<E>[];
 }

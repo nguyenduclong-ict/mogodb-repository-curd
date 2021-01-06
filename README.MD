@@ -16,7 +16,10 @@ import {
   DeleteDateColumn,
 } from "mongodb-repository-crud";
 
-@Entity({ timestamps: true })
+@Entity({
+  timestamps: true,
+  indexs: [{ fields: { username: 1 } }, { fields: { name: "text" } }],
+})
 export class User extends Document {
   @Field()
   username: string;
@@ -43,10 +46,22 @@ export { userSchema };
 
 > `@DeleteDateColumn` decorator will declare deleted column. After you can using `repository.softDelete` to softDelete document
 
-> Default action list, find, findOne only return document has not been softDeleted, set softDelete option on find, list, findOne to:
-> softDelete = 'ignore' : only return document has not been softDeleted (default)
-> softDelete = 'only' : only return document has been softDeleted
-> softDelete = 'all' : return both deleted and not deleted
+Default action list, find, findOne only return document has not been softDeleted, set softDelete option on find, list, findOne to:
+
+- softDelete = 'ignore' : only return document has not been softDeleted (default)
+- softDelete = 'only' : only return document has been softDeleted
+- softDelete = 'all' : return both deleted and not deleted
+
+```typescript
+// Example
+...
+repository.find({query : {score : 1}, softDelete : 'ignore'}) // return except softDeleted
+
+repository.find({query : {score : 1}, softDelete : 'only'}) // return only softDeleted
+
+repository.find({query : {score : 1}, softDelete : 'all'}) // return all document
+...
+```
 
 ### Step 2 - Create Repository
 
