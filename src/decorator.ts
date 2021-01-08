@@ -42,7 +42,7 @@ export function RepoAction(target: any, key: string, descriptor: any) {
   };
 }
 
-export function Inject<T = RepositoryInject>(inject: T): any {
+export function Inject<T = any>(inject: Partial<T> = {}): any {
   return function (constructor: any) {
     Object.assign(constructor.prototype, inject);
   };
