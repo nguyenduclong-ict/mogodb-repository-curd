@@ -1,4 +1,4 @@
-import { HookAction, HookItem, RepositoryInject, Trigger } from "interface";
+import { HookAction, HookItem, RepositoryInject, Trigger } from "./interface";
 import "reflect-metadata";
 import { waterFallPromises } from "./utils";
 
