@@ -1,4 +1,4 @@
-import { Document, DocumentDefinition, FilterQuery, ObjectId, Schema, SchemaOptions, SchemaType, SchemaTypeOpts, UpdateQuery } from "mongoose";
+import { DocumentDefinition, FilterQuery, ObjectId, Schema, SchemaOptions, SchemaType, SchemaTypeOpts, UpdateQuery } from "mongoose";
 export declare type LiteralUnion<T extends U, U = string> = T | (U & {});
 export declare type HookItem = {
     handler: string;
@@ -72,7 +72,7 @@ export interface UpdateOperators<D = any> {
     };
 }
 export interface ListResponse<D = any> {
-    data: Document<D>[];
+    data: D[];
     limit: number;
     skip: number;
     page: number;
@@ -80,7 +80,7 @@ export interface ListResponse<D = any> {
     pageSize: number;
     total: number;
 }
-export declare type Reference<T> = Partial<T & ObjectId>;
+export declare type Reference<E> = Partial<E & ObjectId & string>;
 export declare type FieldType = (SchemaTypeOpts<any> | Schema | SchemaType) & {
     ref?: string;
     slug?: any;

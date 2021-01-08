@@ -15,8 +15,8 @@ export declare class Repository<E extends Document> {
     private makeDefaultContextFindOne;
     private makeDefaultContextUpdate;
     list(context?: RepositoryContext<E>): Promise<ListResponse<E>>;
-    find(context?: RepositoryContext<E>): Promise<Document<E>[]>;
-    findOne(context?: RepositoryContext<E>): Promise<Document<E>>;
+    find(context?: RepositoryContext<E>): Promise<E[]>;
+    findOne(context?: RepositoryContext<E>): Promise<E>;
     create(context: ContextCreate<E>): Promise<E>;
     createMany(context?: ContextCreateMany<E>): Promise<E[]>;
     update(context: ContextUpdate<E>): Promise<E[]>;

@@ -82,7 +82,7 @@ export interface UpdateOperators<D = any> {
 }
 
 export interface ListResponse<D = any> {
-  data: Document<D>[];
+  data: D[];
   limit: number;
   skip: number;
   page: number;
@@ -91,7 +91,7 @@ export interface ListResponse<D = any> {
   total: number;
 }
 
-export type Reference<T> = Partial<T & ObjectId>;
+export type Reference<E> = Partial<E & ObjectId & string>;
 
 export type FieldType = (SchemaTypeOpts<any> | Schema | SchemaType) & {
   ref?: string;

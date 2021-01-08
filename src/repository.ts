@@ -153,7 +153,7 @@ export class Repository<E extends Document> {
   }
 
   @RepoAction
-  async find(context: RepositoryContext<E> = {}): Promise<Document<E>[]> {
+  async find(context: RepositoryContext<E> = {}): Promise<E[]> {
     // Ignore soft delete document
     if (context.softDelete === "ignore") {
       context.query = {
@@ -185,7 +185,7 @@ export class Repository<E extends Document> {
   }
 
   @RepoAction
-  findOne(context: RepositoryContext<E> = {}): Promise<Document<E>> {
+  findOne(context: RepositoryContext<E> = {}): Promise<E> {
     // Ignore soft delete document
     if (context.softDelete === "ignore") {
       context.query = {
