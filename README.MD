@@ -2,6 +2,31 @@
 npm i --save mongodb-repository-crud
 ```
 
+> New feature validate using [async-validator](https://www.npmjs.com/package/async-validator)
+
+```typescript
+// for validate entity with declare class
+const validate = await validateEntity(<EntityClass>, entityData);
+
+// return =>  {valid : boolean, errors, fields}
+
+// for get async-validator schema
+const validatorSchema = getValidatorOfEntity(<EntityClass>)
+
+// using with Express middleware
+route.use((req, res,next) => {
+  const validate = await validateEntity(<EntityClass>, entityData);
+  if(!validate.valid) {
+    return next(new Error(validate.messages[0]))
+  }
+  next()
+})
+```
+
+> Override async-validator setting with option `validator` in decorator `@Field`
+>
+> Check full [demo](https://github.com/nguyenduclong-ict/mogodb-repository-curd/blob/master/src/test/index.test.ts)
+
 It project using create repository in typescript with suggestion in vscode
 
 ### Step 1 - Declare Entity and create Schema
@@ -40,6 +65,28 @@ export class User extends Document {
 const userSchema = createSchema(User);
 
 export { userSchema };
+```
+
+```typescript
+// **** Add function validate entity
+import { validateEntity } from "mongodb-repository-crud";
+
+// use can add config to @Field({ validator : {...} })
+// I use package async-validator, see more: https://github.com/yiminghe/async-validator
+
+...
+const validateResult = await validateEntity(User, { note: "" });
+console.log(validateResult);
+...
+// result
+{
+  valid: false,
+  errors: [
+    { message: 'username is required', field: 'username' },
+    { message: 'deletedAt fails', field: 'deletedAt' }
+  ],
+  fields: { username: [ [Object] ], deletedAt: [ [Object] ] }
+}
 ```
 
 > Default `@Field` generate field with type = `String`, option timestamps = true auto generate 2 filed `createdAt` and `updatedAt`, so declare 2 file in class for snippet when typing and not declare @Field for thems

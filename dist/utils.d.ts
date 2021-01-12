@@ -1,5 +1,5 @@
-import { RepositoryContext } from "./interface";
 import * as mongoose from "mongoose";
+import { RepositoryContext } from "./interface";
 export declare function waterFallPromises(promises: any[]): any;
 interface UriOption {
     host?: string;

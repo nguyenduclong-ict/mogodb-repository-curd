@@ -1,5 +1,5 @@
-import { RepositoryContext } from "./interface";
 import * as mongoose from "mongoose";
+import { RepositoryContext } from "./interface";
 
 export function waterFallPromises(promises: any[]) {
   return promises.reduce(

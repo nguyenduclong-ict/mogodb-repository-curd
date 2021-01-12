@@ -1,5 +1,5 @@
+import { RuleItem } from "async-validator";
 import {
-  Document,
   DocumentDefinition,
   FilterQuery,
   ObjectId,
@@ -42,8 +42,8 @@ export interface FindOptions<T> {
     | LiteralUnion<keyof T, string | number | symbol>[]
     | {
         path: LiteralUnion<keyof T, string | number | symbol>;
-        select: string;
-        model: string;
+        select?: string;
+        model?: string;
       }[];
   skip?: number;
   limit?: number;
@@ -96,6 +96,8 @@ export type Reference<E> = Partial<E & ObjectId & string>;
 export type FieldType = (SchemaTypeOpts<any> | Schema | SchemaType) & {
   ref?: string;
   slug?: any;
+  validator?: RuleItem;
+  arrayValdator?: RuleItem;
 };
 
 export interface RepositoryInject {

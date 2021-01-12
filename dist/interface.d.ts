@@ -1,3 +1,4 @@
+import { RuleItem } from "async-validator";
 import { DocumentDefinition, FilterQuery, ObjectId, Schema, SchemaOptions, SchemaType, SchemaTypeOpts, UpdateQuery } from "mongoose";
 export declare type LiteralUnion<T extends U, U = string> = T | (U & {});
 export declare type HookItem = {
@@ -24,8 +25,8 @@ export interface FindOptions<T> {
     query?: FilterQuery<T>;
     populates?: LiteralUnion<keyof T, string | number | symbol>[] | {
         path: LiteralUnion<keyof T, string | number | symbol>;
-        select: string;
-        model: string;
+        select?: string;
+        model?: string;
     }[];
     skip?: number;
     limit?: number;
@@ -84,6 +85,8 @@ export declare type Reference<E> = Partial<E & ObjectId & string>;
 export declare type FieldType = (SchemaTypeOpts<any> | Schema | SchemaType) & {
     ref?: string;
     slug?: any;
+    validator?: RuleItem;
+    arrayValdator?: RuleItem;
 };
 export interface RepositoryInject {
     connection?: any;

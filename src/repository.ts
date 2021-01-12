@@ -1,4 +1,3 @@
-import * as _ from "lodash";
 import { Connection, Document, Model, Schema } from "mongoose";
 import { Hook, RepoAction } from "./decorator";
 import {
@@ -8,6 +7,7 @@ import {
   ListResponse,
   RepositoryContext,
 } from "./interface";
+import * as _ from "./utils/lodash";
 
 export class Repository<E extends Document> {
   name: string;

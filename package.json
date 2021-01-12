@@ -1,6 +1,6 @@
 {
   "name": "mongodb-repository-crud",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Helper for mongoose",
   "main": "dist/index.js",
   "author": "Nguyen Duc Long",
@@ -29,7 +29,11 @@
     "node repository",
     "node-repository",
     "node-mongodb-repository",
-    "node mongodb repository"
+    "node mongodb repository",
+    "express",
+    "validate",
+    "validator",
+    "repository-validate"
   ],
   "repository": {
     "url": "git@github.com:nguyenduclong-ict/mogodb-repository-curd.git",
@@ -47,6 +51,7 @@
   "dependencies": {
     "@types/lodash": "^4.14.166",
     "@types/mongoose": "^5.10.3",
+    "async-validator": "^3.5.1",
     "lodash": "^4.17.20",
     "mongoose": "^5.11.9"
   }

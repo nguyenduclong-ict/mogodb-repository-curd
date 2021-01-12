@@ -1,6 +1,6 @@
-import { Document, Schema, SchemaOptions, SchemaTypes } from "mongoose";
+import { Document, Schema, SchemaTypes } from "mongoose";
 import { EntityOptions, FieldType } from "./interface";
-import * as _ from "lodash";
+import * as _ from "./utils/lodash";
 
 export function Field(config: FieldType | FieldType[] = { type: String }) {
   return function (target: any, key: any) {
@@ -10,6 +10,7 @@ export function Field(config: FieldType | FieldType[] = { type: String }) {
 
 export function DeleteDateColumn(config?: FieldType) {
   config = _.defaultsDeep(config, {
+    required: false,
     type: SchemaTypes.Date,
     default: null,
     columnType: "deleteDate",

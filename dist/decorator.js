@@ -33,7 +33,7 @@ function RepoAction(target, key, descriptor) {
     };
 }
 exports.RepoAction = RepoAction;
-function Inject(inject) {
+function Inject(inject = {}) {
     return function (constructor) {
         Object.assign(constructor.prototype, inject);
     };

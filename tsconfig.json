@@ -3,6 +3,7 @@
     "target": "ESNext",
     "module": "commonjs",
     "experimentalDecorators": true,
+    "esModuleInterop": true,
     "allowJs": true,
     "declaration": true,
     "outDir": "./dist",

@@ -1,5 +1,5 @@
-import { HookAction, HookItem, RepositoryInject, Trigger } from "./interface";
 import "reflect-metadata";
+import { HookAction, HookItem, Trigger } from "./interface";
 import { waterFallPromises } from "./utils";
 
 export function getHooks(
