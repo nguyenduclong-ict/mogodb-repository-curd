@@ -42,7 +42,7 @@ function checkRequired(rule, value) {
     let isRequired = Array.isArray(rule)
         ? !!rule.find((r) => r.required)
         : rule.required;
-    return (!value && !isRequired) || (isRequired && value);
+    return isRequired ? !!value : true;
 }
 function getRequiredMessage(rule) {
     return ((Array.isArray(rule)
@@ -91,6 +91,7 @@ function initType(rule, config) {
                     else if (!mongoose_1.isValidObjectId(v)) {
                         cb(getErrorMessage(r, r.fullField + " must be ObjectId"));
                     }
+                    cb();
                 };
                 break;
             case Number:

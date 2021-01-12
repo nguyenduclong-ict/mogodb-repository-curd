@@ -7,7 +7,7 @@ import {
   ListResponse,
   RepositoryContext,
 } from "./interface";
-import * as _ from "./utils/lodash";
+import _ from "./utils/lodash";
 
 export class Repository<E extends Document> {
   name: string;

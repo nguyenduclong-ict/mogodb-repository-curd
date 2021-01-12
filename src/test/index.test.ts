@@ -31,6 +31,9 @@ class User extends Document {
   @Field({ type: String, required: true })
   username: string;
 
+  @Field({ type: String, required: true })
+  text?: string;
+
   @Field({
     type: [{ type: SchemaTypes.ObjectId, ref: Post.name }],
     default: [],
@@ -64,7 +67,7 @@ class PostRepository extends Repository<Post> {}
   };
 
   const validate = await validateEntity(User, userData);
-  console.log(validate.errors);
+  console.log(validate);
 
   if (validate.valid) {
     const user = await userRepository.create({ data: userData });

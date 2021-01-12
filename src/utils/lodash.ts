@@ -9,7 +9,7 @@ import pick from "lodash/pick";
 import pickBy from "lodash/pickBy";
 import set from "lodash/set";
 
-export {
+export default {
   pick,
   isEmpty,
   memoize,

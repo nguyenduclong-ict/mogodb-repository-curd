@@ -44,7 +44,7 @@ function checkRequired(rule: Rules, value: any) {
   let isRequired = Array.isArray(rule)
     ? !!rule.find((r) => r.required)
     : rule.required;
-  return (!value && !isRequired) || (isRequired && value);
+  return isRequired ? !!value : true;
 }
 
 function getRequiredMessage(rule: Rules) {
@@ -99,6 +99,7 @@ function initType(rule: RuleItem, config: any) {
           } else if (!isValidObjectId(v)) {
             cb(getErrorMessage(r, r.fullField + " must be ObjectId"));
           }
+          cb();
         };
         break;
 

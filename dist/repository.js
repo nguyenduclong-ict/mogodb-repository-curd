@@ -1,33 +1,17 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Repository = void 0;
 const decorator_1 = require("./decorator");
-const _ = __importStar(require("./utils/lodash"));
+const lodash_1 = __importDefault(require("./utils/lodash"));
 class Repository {
     constructor(connection) {
         this.connection = connection || this.connection;
@@ -39,22 +23,22 @@ class Repository {
         }
         this.model = this.connection.model(this.name, this.schema);
         this.#cached = {
-            softDeletePaths: _.memoize((shema) => {
-                return _.pickBy(this.schema.paths, (value) => _.get(value, "options.columnType") === "deleteDate");
+            softDeletePaths: lodash_1.default.memoize((shema) => {
+                return lodash_1.default.pickBy(this.schema.paths, (value) => lodash_1.default.get(value, "options.columnType") === "deleteDate");
             }),
-            ignoreSoftDeleteQuery: _.memoize((schema) => {
+            ignoreSoftDeleteQuery: lodash_1.default.memoize((schema) => {
                 const queryIgnore = {};
-                const deleteDatePaths = _.pickBy(schema.paths, (value) => _.get(value, "options.columnType") === "deleteDate");
+                const deleteDatePaths = lodash_1.default.pickBy(schema.paths, (value) => lodash_1.default.get(value, "options.columnType") === "deleteDate");
                 Object.keys(deleteDatePaths).forEach((key) => {
-                    _.set(queryIgnore, key, null);
+                    lodash_1.default.set(queryIgnore, key, null);
                 });
                 return queryIgnore;
             }),
-            onlySoftDeleteQuery: _.memoize((schema) => {
+            onlySoftDeleteQuery: lodash_1.default.memoize((schema) => {
                 const queryOnly = {};
-                const deleteDatePaths = _.pickBy(this.schema.paths, (value) => _.get(value, "options.columnType") === "deleteDate");
+                const deleteDatePaths = lodash_1.default.pickBy(this.schema.paths, (value) => lodash_1.default.get(value, "options.columnType") === "deleteDate");
                 Object.keys(deleteDatePaths).forEach((key) => {
-                    _.set(queryOnly, key, { $type: "date" });
+                    lodash_1.default.set(queryOnly, key, { $type: "date" });
                 });
                 return queryOnly;
             }),
@@ -66,7 +50,7 @@ class Repository {
         return this.#cached.softDeletePaths(this.schema);
     }
     get hasSoftDelete() {
-        return !_.isEmpty(this.softDeletePaths);
+        return !lodash_1.default.isEmpty(this.softDeletePaths);
     }
     get ignoreSoftDeleteQuery() {
         return this.#cached.ignoreSoftDeleteQuery(this.schema);
@@ -105,7 +89,7 @@ class Repository {
             };
         }
         const [data, counts] = await Promise.all([
-            Repository.populate(this.model.find(context.query, undefined, _.pick(context, [
+            Repository.populate(this.model.find(context.query, undefined, lodash_1.default.pick(context, [
                 "skip",
                 "limit",
                 "projection",
@@ -136,14 +120,14 @@ class Repository {
                 $and: [context.query || {}, this.onlySoftDeleteQuery],
             };
         }
-        return this.model.find(context.query, undefined, _.omitBy(_.pick(context, [
+        return this.model.find(context.query, undefined, lodash_1.default.omitBy(lodash_1.default.pick(context, [
             "populate",
             "skip",
             "limit",
             "projection",
             "sort",
             "session",
-        ]), _.isNil));
+        ]), lodash_1.default.isNil));
     }
     findOne(context = {}) {
         // Ignore soft delete document
@@ -157,16 +141,16 @@ class Repository {
                 $and: [context.query || {}, this.onlySoftDeleteQuery],
             };
         }
-        return Repository.populate(this.model.findOne(context.query, undefined, _.omitBy(_.pick(context, ["projection", "session"]), _.isNil)), context.populates);
+        return Repository.populate(this.model.findOne(context.query, undefined, lodash_1.default.omitBy(lodash_1.default.pick(context, ["projection", "session"]), lodash_1.default.isNil)), context.populates);
     }
     create(context) {
-        let options = _.omitBy({ session: context.session }, _.isNil);
-        options = _.isEmpty(options) ? undefined : options;
+        let options = lodash_1.default.omitBy({ session: context.session }, lodash_1.default.isNil);
+        options = lodash_1.default.isEmpty(options) ? undefined : options;
         return this.model.create(context.data, options);
     }
     createMany(context = {}) {
-        let options = _.omitBy({ session: context.session }, _.isNil);
-        options = _.isEmpty(options) ? undefined : options;
+        let options = lodash_1.default.omitBy({ session: context.session }, lodash_1.default.isNil);
+        options = lodash_1.default.isEmpty(options) ? undefined : options;
         return this.model.create(context.data, options);
     }
     update(context) {
@@ -177,44 +161,44 @@ class Repository {
                 .updateMany(context.query, context.data)
                 .then(() => Repository.populate(this.model.find({
                 _id: docs.map((doc) => doc.id),
-            }, undefined, _.omitBy(_.pick(context, ["projection", "session", "new"]), _.isNil)), context.populates)));
+            }, undefined, lodash_1.default.omitBy(lodash_1.default.pick(context, ["projection", "session", "new"]), lodash_1.default.isNil)), context.populates)));
         }
         else {
-            return this.model.updateMany(context.query, context.data, _.omitBy({ session: context.session }, _.isNil));
+            return this.model.updateMany(context.query, context.data, lodash_1.default.omitBy({ session: context.session }, lodash_1.default.isNil));
         }
     }
     updateOne(context) {
-        return Repository.populate(this.model.findOneAndUpdate(context.query, context.data, _.omitBy(_.pick(context, ["projecton", "session", "new"]), _.isNil)), context.populates);
+        return Repository.populate(this.model.findOneAndUpdate(context.query, context.data, lodash_1.default.omitBy(lodash_1.default.pick(context, ["projecton", "session", "new"]), lodash_1.default.isNil)), context.populates);
     }
     delete(context) {
-        return this.model.deleteMany(context.query, _.omitBy({ session: context.session }, _.isNil));
+        return this.model.deleteMany(context.query, lodash_1.default.omitBy({ session: context.session }, lodash_1.default.isNil));
     }
     softDelete(context) {
-        const deleteDatePaths = _.pickBy(this.schema.paths, (value) => _.get(value, "options.columnType") === "deleteDate");
-        if (_.isEmpty(deleteDatePaths)) {
+        const deleteDatePaths = lodash_1.default.pickBy(this.schema.paths, (value) => lodash_1.default.get(value, "options.columnType") === "deleteDate");
+        if (lodash_1.default.isEmpty(deleteDatePaths)) {
             throw new Error("Cannot find at least field typeof deleteDate");
         }
         const update = {};
         Object.keys(deleteDatePaths).forEach((key) => {
-            _.set(update, "$currentDate." + key, true);
+            lodash_1.default.set(update, "$currentDate." + key, true);
         });
         return this.model.updateMany(context.query, update, { new: true });
     }
     restoreSoftDelete(context) {
-        const deleteDatePaths = _.pickBy(this.schema.paths, (value) => _.get(value, "options.columnType") === "deleteDate");
-        if (_.isEmpty(deleteDatePaths)) {
+        const deleteDatePaths = lodash_1.default.pickBy(this.schema.paths, (value) => lodash_1.default.get(value, "options.columnType") === "deleteDate");
+        if (lodash_1.default.isEmpty(deleteDatePaths)) {
             throw new Error("Cannot find at least field typeof deleteDate");
         }
         const update = {};
         Object.keys(deleteDatePaths).forEach((key) => {
-            _.set(update, key, null);
+            lodash_1.default.set(update, key, null);
         });
         return this.model.updateMany(context.query, update, { new: true });
     }
     coreBeforeCreate(context) {
-        if (this.model.schema.path("createdBy") && _.has(context, "meta.user")) {
-            _.set(context, "data.createdBy", context.meta.user.id);
-            _.set(context, "data.updatedBy", context.meta.user.id);
+        if (this.model.schema.path("createdBy") && lodash_1.default.has(context, "meta.user")) {
+            lodash_1.default.set(context, "data.createdBy", context.meta.user.id);
+            lodash_1.default.set(context, "data.updatedBy", context.meta.user.id);
         }
     }
     static populate(query, populate) {
@@ -258,7 +242,7 @@ class Repository {
                     return item;
                 }
                 else {
-                    return _.omitBy({ path, select, model }, _.isNil);
+                    return lodash_1.default.omitBy({ path, select, model }, lodash_1.default.isNil);
                 }
             }
             else {

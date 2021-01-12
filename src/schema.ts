@@ -1,6 +1,6 @@
 import { Document, Schema, SchemaTypes } from "mongoose";
 import { EntityOptions, FieldType } from "./interface";
-import * as _ from "./utils/lodash";
+import _ from "./utils/lodash";
 
 export function Field(config: FieldType | FieldType[] = { type: String }) {
   return function (target: any, key: any) {
