@@ -1,0 +1,10 @@
+import { Entity, Field, createSchema } from "mongodb-repository-crud";
+import { Document } from "mongoose";
+
+@Entity<<%= name %>>({})
+export class <%= name %> extends Document {
+}
+
+const <%= name %>Schema = createSchema<<%=name%>>(<%= name %>);
+
+export { <%= name %>Schema };

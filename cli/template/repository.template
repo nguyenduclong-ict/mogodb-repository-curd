@@ -1,0 +1,6 @@
+import { Connections } from "@Constants/connections";
+import { Inject, Repository } from "mongodb-repository-crud";
+import { <%= name %>, <%= name %>Schema } from "./<%= name %>.schema";
+
+@Inject({ connection: Connections.default, schema: <%= name %>Schema })
+export class <%= name %>Repository extends Repository<<%= name %>> {}

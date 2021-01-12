@@ -2,6 +2,20 @@
 npm i --save mongodb-repository-crud
 ```
 
+```bash
+# CLI mrc-tool
+npm i -g mongodb-repository-crud
+mrc-tool --help
+
+# create entity
+mrc-tool entity entities User
+
+# => generate
+src/services/entities/User.schema.ts
+src/services/entities/User.repository.ts
+
+```
+
 > New feature validate using [async-validator](https://www.npmjs.com/package/async-validator)
 
 ```typescript
@@ -12,6 +26,10 @@ const validate = await validateEntity(<EntityClass>, entityData);
 
 // for get async-validator schema
 const validatorSchema = getValidatorOfEntity(<EntityClass>)
+
+// example
+
+const validate = await validateEntity(User, {username : '123'});
 
 // using with Express middleware
 route.use((req, res,next) => {
