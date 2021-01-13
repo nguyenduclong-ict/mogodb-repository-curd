@@ -18,10 +18,9 @@ class Repository {
         if (!this.name) {
             this.name = this.constructor.name.replace(/Repository$/, "");
         }
-        if (this.connection.modelNames().includes(this.name)) {
-            this.connection.deleteModel(this.name);
-        }
-        this.model = this.connection.model(this.name, this.schema);
+        this.model =
+            this.connection.models[this.name] ||
+                this.connection.model(this.name, this.schema);
         this.#cached = {
             softDeletePaths: lodash_1.default.memoize((shema) => {
                 return lodash_1.default.pickBy(this.schema.paths, (value) => lodash_1.default.get(value, "options.columnType") === "deleteDate");

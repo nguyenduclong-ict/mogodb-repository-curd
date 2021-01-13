@@ -23,11 +23,9 @@ export class Repository<E extends Document> {
       this.name = this.constructor.name.replace(/Repository$/, "");
     }
 
-    if (this.connection.modelNames().includes(this.name)) {
-      this.connection.deleteModel(this.name);
-    }
-
-    this.model = this.connection.model<E>(this.name, this.schema);
+    this.model =
+      this.connection.models[this.name] ||
+      this.connection.model<E>(this.name, this.schema);
 
     this.#cached = {
       softDeletePaths: _.memoize((shema: Schema) => {
