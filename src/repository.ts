@@ -212,7 +212,7 @@ export class Repository<E extends Document> {
     let options: any = _.omitBy({ session: context.session }, _.isNil);
     options = _.isEmpty(options) ? undefined : options;
     return this.model.create(context.data as any, options).then((doc: any) => {
-      if (context.populates) {
+      if (context.populates?.length) {
         return Repository.populate(
           this.model.findById(doc.id),
           context.populates

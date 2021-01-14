@@ -146,7 +146,7 @@ class Repository {
         let options = lodash_1.default.omitBy({ session: context.session }, lodash_1.default.isNil);
         options = lodash_1.default.isEmpty(options) ? undefined : options;
         return this.model.create(context.data, options).then((doc) => {
-            if (context.populates) {
+            if (context.populates?.length) {
                 return Repository.populate(this.model.findById(doc.id), context.populates);
             }
             return doc;
