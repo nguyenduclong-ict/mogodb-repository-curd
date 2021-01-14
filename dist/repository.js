@@ -142,10 +142,15 @@ class Repository {
         }
         return Repository.populate(this.model.findOne(context.query, undefined, lodash_1.default.omitBy(lodash_1.default.pick(context, ["projection", "session"]), lodash_1.default.isNil)), context.populates);
     }
-    create(context) {
+    async create(context) {
         let options = lodash_1.default.omitBy({ session: context.session }, lodash_1.default.isNil);
         options = lodash_1.default.isEmpty(options) ? undefined : options;
-        return this.model.create(context.data, options);
+        return this.model.create(context.data, options).then((doc) => {
+            if (context.populates) {
+                return Repository.populate(this.model.findById(doc.id), context.populates);
+            }
+            return doc;
+        });
     }
     createMany(context = {}) {
         let options = lodash_1.default.omitBy({ session: context.session }, lodash_1.default.isNil);

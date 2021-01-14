@@ -208,10 +208,18 @@ export class Repository<E extends Document> {
   }
 
   @RepoAction
-  create(context: ContextCreate<E>): Promise<E> {
+  async create(context: ContextCreate<E>): Promise<E> {
     let options: any = _.omitBy({ session: context.session }, _.isNil);
     options = _.isEmpty(options) ? undefined : options;
-    return this.model.create(context.data as any, options) as any;
+    return this.model.create(context.data as any, options).then((doc: any) => {
+      if (context.populates) {
+        return Repository.populate(
+          this.model.findById(doc.id),
+          context.populates
+        );
+      }
+      return doc;
+    });
   }
 
   @RepoAction
