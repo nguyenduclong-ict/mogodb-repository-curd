@@ -12,9 +12,9 @@ function getValidatorOfEntity(EntityClass, useCache = true) {
         return cached.get(EntityClass);
     }
     const entityDefination = {};
-    Reflect.getMetadataKeys(EntityClass).forEach((key) => {
+    Reflect.getOwnMetadataKeys(EntityClass).forEach((key) => {
         if (!key.startsWith("^"))
-            entityDefination[key] = Reflect.getMetadata(key, EntityClass);
+            entityDefination[key] = Reflect.getOwnMetadata(key, EntityClass);
     });
     const descriptor = {};
     Object.keys(entityDefination).forEach((field) => {

@@ -35,11 +35,11 @@ function Entity(options = {}) {
 exports.Entity = Entity;
 function createSchema(EntityClass) {
     const schemaDefinition = {};
-    Reflect.getMetadataKeys(EntityClass).forEach((key) => {
+    Reflect.getOwnMetadataKeys(EntityClass).forEach((key) => {
         if (!key.startsWith("^"))
-            schemaDefinition[key] = Reflect.getMetadata(key, EntityClass);
+            schemaDefinition[key] = Reflect.getOwnMetadata(key, EntityClass);
     });
-    const options = Reflect.getMetadata("^options", EntityClass);
+    const options = Reflect.getOwnMetadata("^options", EntityClass);
     const schema = new mongoose_1.Schema(schemaDefinition, options);
     if (options?.virtualId) {
         schema.set("toJSON", {

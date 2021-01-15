@@ -13,8 +13,9 @@ mrc-tool entity entities User
 # => generate
 src/services/entities/User.schema.ts
 src/services/entities/User.repository.ts
-
 ```
+
+> Fixed Reposiory hook, error in version 1.0.16
 
 > New feature validate using [async-validator](https://www.npmjs.com/package/async-validator)
 

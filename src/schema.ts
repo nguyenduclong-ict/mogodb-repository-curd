@@ -32,12 +32,15 @@ export function Entity<E = any>(options: EntityOptions<E> = {}) {
 
 export function createSchema<E = any>(EntityClass: any) {
   const schemaDefinition: any = {};
-  Reflect.getMetadataKeys(EntityClass).forEach((key: string) => {
+  Reflect.getOwnMetadataKeys(EntityClass).forEach((key: string) => {
     if (!key.startsWith("^"))
-      schemaDefinition[key] = Reflect.getMetadata(key, EntityClass);
+      schemaDefinition[key] = Reflect.getOwnMetadata(key, EntityClass);
   });
 
-  const options: EntityOptions = Reflect.getMetadata("^options", EntityClass);
+  const options: EntityOptions = Reflect.getOwnMetadata(
+    "^options",
+    EntityClass
+  );
 
   const schema = new Schema<Document<E>>(schemaDefinition, options);
 

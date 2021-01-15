@@ -257,13 +257,13 @@ class Repository {
     }
 }
 __decorate([
-    decorator_1.Hook("before", ["list", "find"], -1)
+    decorator_1.Hook("before", ["list", "find"])
 ], Repository.prototype, "makeDefaultContextList", null);
 __decorate([
-    decorator_1.Hook("before", ["findOne"], -1)
+    decorator_1.Hook("before", ["findOne"])
 ], Repository.prototype, "makeDefaultContextFindOne", null);
 __decorate([
-    decorator_1.Hook("before", ["update", "updateOne"], -1)
+    decorator_1.Hook("before", ["update", "updateOne"])
 ], Repository.prototype, "makeDefaultContextUpdate", null);
 __decorate([
     decorator_1.RepoAction
@@ -296,6 +296,6 @@ __decorate([
     decorator_1.RepoAction
 ], Repository.prototype, "restoreSoftDelete", null);
 __decorate([
-    decorator_1.Hook("before", ["create"], -1)
+    decorator_1.Hook("before", ["create"])
 ], Repository.prototype, "coreBeforeCreate", null);
 exports.Repository = Repository;

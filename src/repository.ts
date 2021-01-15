@@ -83,7 +83,7 @@ export class Repository<E extends Document> {
   }
   // End soft delete only
 
-  @Hook("before", ["list", "find"], -1)
+  @Hook("before", ["list", "find"])
   private makeDefaultContextList(context: RepositoryContext<E> = {}) {
     context.page = context.page || 1;
     context.pageSize = context.pageSize || 100;
@@ -94,14 +94,14 @@ export class Repository<E extends Document> {
       : undefined;
   }
 
-  @Hook("before", ["findOne"], -1)
+  @Hook("before", ["findOne"])
   private makeDefaultContextFindOne(context: RepositoryContext<E> = {}) {
     context.softDelete = this.hasSoftDelete
       ? context.softDelete ?? "ignore"
       : undefined;
   }
 
-  @Hook("before", ["update", "updateOne"], -1)
+  @Hook("before", ["update", "updateOne"])
   private makeDefaultContextUpdate(context: any = {}) {
     context.new = context.new ?? true;
   }
@@ -322,7 +322,7 @@ export class Repository<E extends Document> {
     return this.model.updateMany(context.query as any, update, { new: true });
   }
 
-  @Hook("before", ["create"], -1)
+  @Hook("before", ["create"])
   protected coreBeforeCreate(context: RepositoryContext<E>) {
     if (this.model.schema.path("createdBy") && _.has(context, "meta.user")) {
       _.set(context, "data.createdBy", context.meta.user.id);

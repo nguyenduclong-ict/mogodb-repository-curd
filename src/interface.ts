@@ -44,6 +44,7 @@ export interface FindOptions<T> {
         path: LiteralUnion<keyof T, string | number | symbol>;
         select?: string;
         model?: string;
+        populate?: FindOptions<T>["populates"];
       }[];
   skip?: number;
   limit?: number;
