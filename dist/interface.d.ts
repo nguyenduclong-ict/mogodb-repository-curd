@@ -37,6 +37,7 @@ export interface FindOptions<T> {
     new?: boolean;
     projection?: any;
     session?: any;
+    select?: any;
     /**
      * ignore: return document no softDelete,
      * only: only return document softDeleted,

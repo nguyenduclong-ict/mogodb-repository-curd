@@ -121,21 +121,21 @@ export class Repository<E extends Document> {
       } as any;
     }
 
+    const queryBuilder = this.model.find(
+      context.query as any,
+      undefined,
+      _.omitBy(
+        _.pick(context, ["skip", "limit", "projection", "sort", "session"]),
+        _.isNil
+      )
+    );
+    Repository.populate(queryBuilder, context.populates);
+    if (context.select) {
+      queryBuilder.select(context.select);
+    }
+
     const [data, counts] = await Promise.all([
-      Repository.populate(
-        this.model.find(
-          context.query as any,
-          undefined,
-          _.pick(context, [
-            "skip",
-            "limit",
-            "projection",
-            "sort",
-            "session",
-          ]) as any
-        ),
-        context.populates
-      ),
+      queryBuilder.exec(),
       this.model.countDocuments(context.query as any),
     ]);
 
@@ -165,21 +165,20 @@ export class Repository<E extends Document> {
       } as any;
     }
 
-    return this.model.find(
+    const queryBuilder = this.model.find(
       context.query as any,
       undefined,
       _.omitBy(
-        _.pick(context, [
-          "populate",
-          "skip",
-          "limit",
-          "projection",
-          "sort",
-          "session",
-        ]),
+        _.pick(context, ["skip", "limit", "projection", "sort", "session"]),
         _.isNil
       )
     );
+    Repository.populate(queryBuilder, context.populates);
+    if (context.select) {
+      queryBuilder.select(context.select);
+    }
+
+    return queryBuilder.exec();
   }
 
   @RepoAction
@@ -197,14 +196,16 @@ export class Repository<E extends Document> {
       } as any;
     }
 
-    return Repository.populate(
-      this.model.findOne(
-        context.query as any,
-        undefined,
-        _.omitBy(_.pick(context, ["projection", "session"]), _.isNil)
-      ),
-      context.populates
+    const queryBuilder = this.model.findOne(
+      context.query as any,
+      undefined,
+      _.omitBy(_.pick(context, ["projection", "session"]), _.isNil)
     );
+    Repository.populate(queryBuilder, context.populates);
+    if (context.select) {
+      queryBuilder.select(context.select);
+    }
+    return queryBuilder.exec();
   }
 
   @RepoAction

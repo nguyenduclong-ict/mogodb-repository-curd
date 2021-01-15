@@ -87,14 +87,13 @@ class Repository {
                 $and: [context.query || {}, this.onlySoftDeleteQuery],
             };
         }
+        const queryBuilder = this.model.find(context.query, undefined, lodash_1.default.omitBy(lodash_1.default.pick(context, ["skip", "limit", "projection", "sort", "session"]), lodash_1.default.isNil));
+        Repository.populate(queryBuilder, context.populates);
+        if (context.select) {
+            queryBuilder.select(context.select);
+        }
         const [data, counts] = await Promise.all([
-            Repository.populate(this.model.find(context.query, undefined, lodash_1.default.pick(context, [
-                "skip",
-                "limit",
-                "projection",
-                "sort",
-                "session",
-            ])), context.populates),
+            queryBuilder.exec(),
             this.model.countDocuments(context.query),
         ]);
         return {
@@ -119,14 +118,12 @@ class Repository {
                 $and: [context.query || {}, this.onlySoftDeleteQuery],
             };
         }
-        return this.model.find(context.query, undefined, lodash_1.default.omitBy(lodash_1.default.pick(context, [
-            "populate",
-            "skip",
-            "limit",
-            "projection",
-            "sort",
-            "session",
-        ]), lodash_1.default.isNil));
+        const queryBuilder = this.model.find(context.query, undefined, lodash_1.default.omitBy(lodash_1.default.pick(context, ["skip", "limit", "projection", "sort", "session"]), lodash_1.default.isNil));
+        Repository.populate(queryBuilder, context.populates);
+        if (context.select) {
+            queryBuilder.select(context.select);
+        }
+        return queryBuilder.exec();
     }
     findOne(context = {}) {
         // Ignore soft delete document
@@ -140,7 +137,12 @@ class Repository {
                 $and: [context.query || {}, this.onlySoftDeleteQuery],
             };
         }
-        return Repository.populate(this.model.findOne(context.query, undefined, lodash_1.default.omitBy(lodash_1.default.pick(context, ["projection", "session"]), lodash_1.default.isNil)), context.populates);
+        const queryBuilder = this.model.findOne(context.query, undefined, lodash_1.default.omitBy(lodash_1.default.pick(context, ["projection", "session"]), lodash_1.default.isNil));
+        Repository.populate(queryBuilder, context.populates);
+        if (context.select) {
+            queryBuilder.select(context.select);
+        }
+        return queryBuilder.exec();
     }
     async create(context) {
         let options = lodash_1.default.omitBy({ session: context.session }, lodash_1.default.isNil);
