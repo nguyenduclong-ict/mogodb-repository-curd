@@ -9,9 +9,37 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Repository = void 0;
+exports.Repository = exports.castAllObjectId = void 0;
+const mongoose_1 = require("mongoose");
 const decorator_1 = require("./decorator");
 const lodash_1 = __importDefault(require("./utils/lodash"));
+function castAllObjectId(schema, data) {
+    schema.eachPath((path, type) => {
+        let origin;
+        if (type.instance === "ObjectID" &&
+            (origin = lodash_1.default.get(data, path)) &&
+            !mongoose_1.isValidObjectId(origin)) {
+            lodash_1.default.set(data, path, origin.id || origin._id);
+            return;
+        }
+        if (type.instance === "Array" &&
+            type.caster.instance === "ObjectID" &&
+            (origin = lodash_1.default.get(data, path))) {
+            let arr = origin;
+            if (arr && Array.isArray(arr)) {
+                arr = arr.map((item) => {
+                    if (item && !mongoose_1.isValidObjectId(item)) {
+                        return item.id || item._id;
+                    }
+                    return item;
+                });
+            }
+            lodash_1.default.set(data, path, arr);
+        }
+    });
+    return data;
+}
+exports.castAllObjectId = castAllObjectId;
 class Repository {
     constructor(connection) {
         this.connection = connection || this.connection;
@@ -72,7 +100,11 @@ class Repository {
             ? context.softDelete ?? "ignore"
             : undefined;
     }
+    castObjectIdForEntity(data) {
+        return castAllObjectId(this.schema, data);
+    }
     makeDefaultContextUpdate(context = {}) {
+        this.castObjectIdForEntity(context.data);
         context.new = context.new ?? true;
     }
     async list(context = {}) {
@@ -202,6 +234,8 @@ class Repository {
         return this.model.updateMany(context.query, update, { new: true });
     }
     coreBeforeCreate(context) {
+        // cast ObjectId
+        this.castObjectIdForEntity(context.data);
         if (this.model.schema.path("createdBy") && lodash_1.default.has(context, "meta.user")) {
             lodash_1.default.set(context, "data.createdBy", context.meta.user.id);
             lodash_1.default.set(context, "data.updatedBy", context.meta.user.id);

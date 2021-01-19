@@ -1,5 +1,6 @@
 import { Connection, Document, Model, Schema } from "mongoose";
 import { ContextCreate, ContextCreateMany, ContextUpdate, ListResponse, RepositoryContext } from "./interface";
+export declare function castAllObjectId(schema: Schema, data: any): any;
 export declare class Repository<E extends Document> {
     #private;
     name: string;
@@ -13,6 +14,7 @@ export declare class Repository<E extends Document> {
     private get onlySoftDeleteQuery();
     private makeDefaultContextList;
     private makeDefaultContextFindOne;
+    castObjectIdForEntity(data: any): E;
     private makeDefaultContextUpdate;
     list(context?: RepositoryContext<E>): Promise<ListResponse<E>>;
     find(context?: RepositoryContext<E>): Promise<E[]>;
@@ -24,7 +26,7 @@ export declare class Repository<E extends Document> {
     delete(context: RepositoryContext<E>): import("mongoose").Query<any, E>;
     softDelete(context: RepositoryContext<E>): import("mongoose").Query<any, E>;
     restoreSoftDelete(context: RepositoryContext<E>): import("mongoose").Query<any, E>;
-    protected coreBeforeCreate(context: RepositoryContext<E>): void;
+    protected coreBeforeCreate(context: ContextCreate<E>): void;
     static populate(query: any, populate: any): any;
     static buildPopulate(populate: any): PopulateItem[];
 }

@@ -1,4 +1,11 @@
-import { Connection, Document, Model, Schema } from "mongoose";
+import {
+  Connection,
+  Document,
+  isValidObjectId,
+  Model,
+  Schema,
+  SchemaTypes,
+} from "mongoose";
 import { Hook, RepoAction } from "./decorator";
 import {
   ContextCreate,
@@ -8,6 +15,37 @@ import {
   RepositoryContext,
 } from "./interface";
 import _ from "./utils/lodash";
+
+export function castAllObjectId(schema: Schema, data: any): any {
+  schema.eachPath((path, type: any) => {
+    let origin;
+    if (
+      type.instance === "ObjectID" &&
+      (origin = _.get(data, path)) &&
+      !isValidObjectId(origin)
+    ) {
+      _.set(data, path, origin.id || origin._id);
+      return;
+    }
+    if (
+      type.instance === "Array" &&
+      type.caster.instance === "ObjectID" &&
+      (origin = _.get(data, path))
+    ) {
+      let arr = origin;
+      if (arr && Array.isArray(arr)) {
+        arr = arr.map((item) => {
+          if (item && !isValidObjectId(item)) {
+            return item.id || item._id;
+          }
+          return item;
+        });
+      }
+      _.set(data, path, arr);
+    }
+  });
+  return data;
+}
 
 export class Repository<E extends Document> {
   name: string;
@@ -101,8 +139,13 @@ export class Repository<E extends Document> {
       : undefined;
   }
 
+  castObjectIdForEntity(data: any): E {
+    return castAllObjectId(this.schema, data) as E;
+  }
+
   @Hook("before", ["update", "updateOne"])
   private makeDefaultContextUpdate(context: any = {}) {
+    this.castObjectIdForEntity(context.data);
     context.new = context.new ?? true;
   }
 
@@ -324,7 +367,9 @@ export class Repository<E extends Document> {
   }
 
   @Hook("before", ["create"])
-  protected coreBeforeCreate(context: RepositoryContext<E>) {
+  protected coreBeforeCreate(context: ContextCreate<E>) {
+    // cast ObjectId
+    this.castObjectIdForEntity(context.data);
     if (this.model.schema.path("createdBy") && _.has(context, "meta.user")) {
       _.set(context, "data.createdBy", context.meta.user.id);
       _.set(context, "data.updatedBy", context.meta.user.id);
