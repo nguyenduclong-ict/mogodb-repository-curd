@@ -110,6 +110,46 @@ console.log(validateResult);
 
 > Default `@Field` generate field with type = `String`, option timestamps = true auto generate 2 filed `createdAt` and `updatedAt`, so declare 2 file in class for snippet when typing and not declare @Field for thems
 
+### Cascade
+
+> Cascade `create`, `update`, `delete` on reference document.
+> Example:
+
+```typescript
+@Entity()
+Post {
+   @Field({
+    type: [{ type: SchemaTypes.ObjectId, ref: "Comment" }],
+    default: [],
+    cascade: true, // pass cascade option here
+  })
+  comments: Comment[]
+}
+
+@Entity()
+Comment {
+  ...
+}
+
+// And when create post
+const post = await postRepository.create({
+  data: {
+    title: "Post demo 2123345",
+    content: "My love",
+    comments: [{ commentBy: "NguyenDucLong", content: "HIHI" }],
+  },
+  populates: ["comments"],
+});
+
+=> auto create
+comment  = { commentBy: "NguyenDucLong", content: "HIHI" }
+and add comment.id => post.comments
+```
+
+Check full demo [here](https://github.com/nguyenduclong-ict/mogodb-repository-curd/blob/master/src/test/cascade.test.ts)
+
+### softDelete
+
 > `@DeleteDateColumn` decorator will declare deleted column. After you can using `repository.softDelete` to softDelete document
 
 Default action list, find, findOne only return document has not been softDeleted, set softDelete option on find, list, findOne to:

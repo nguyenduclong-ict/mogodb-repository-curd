@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.transformContext = exports.createConnection = exports.createMongoUri = exports.waterFallPromises = void 0;
+exports.parseMongoQuery = exports.transformContext = exports.createConnection = exports.createMongoUri = exports.waterFallPromises = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 function waterFallPromises(promises) {
     return promises.reduce((prev, curr) => prev.then((prevResult) => curr(prevResult)), Promise.resolve());
@@ -56,3 +56,11 @@ function transformContext(context) {
     };
 }
 exports.transformContext = transformContext;
+function parseMongoQuery(query) {
+    if (query.id) {
+        query._id = query.id;
+        delete query.id;
+    }
+    return query;
+}
+exports.parseMongoQuery = parseMongoQuery;

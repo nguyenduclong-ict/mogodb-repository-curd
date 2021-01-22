@@ -12,4 +12,5 @@ interface UriOption {
 export declare function createMongoUri(options: UriOption | string): string;
 export declare function createConnection(uri: string | UriOption, options?: mongoose.ConnectionOptions): mongoose.Connection & Promise<mongoose.Connection>;
 export declare function transformContext<T = any, M = any>(context: any): RepositoryContext<T, M>;
+export declare function parseMongoQuery(query: any): any;
 export {};

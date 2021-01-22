@@ -9,37 +9,35 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Repository = exports.castAllObjectId = void 0;
+exports.Repository = exports.getObjectId = exports.repositoryLocator = void 0;
 const mongoose_1 = require("mongoose");
 const decorator_1 = require("./decorator");
+const utils_1 = require("./utils");
 const lodash_1 = __importDefault(require("./utils/lodash"));
-function castAllObjectId(schema, data) {
-    schema.eachPath((path, type) => {
-        let origin;
-        if (type.instance === "ObjectID" &&
-            (origin = lodash_1.default.get(data, path)) &&
-            !mongoose_1.isValidObjectId(origin)) {
-            lodash_1.default.set(data, path, origin.id || origin._id);
-            return;
-        }
-        if (type.instance === "Array" &&
-            type.caster.instance === "ObjectID" &&
-            (origin = lodash_1.default.get(data, path))) {
-            let arr = origin;
-            if (arr && Array.isArray(arr)) {
-                arr = arr.map((item) => {
-                    if (item && !mongoose_1.isValidObjectId(item)) {
-                        return item.id || item._id;
-                    }
-                    return item;
-                });
-            }
-            lodash_1.default.set(data, path, arr);
-        }
-    });
-    return data;
+class RepositoryLocator {
+    constructor() {
+        this.repositories = new Map();
+    }
+    registerRepository(respository) {
+        const locator = this.repositories.get(respository.name) ||
+            this.repositories.set(respository.name, new Map()).get(respository.name);
+        locator.set(respository.connection, respository);
+    }
+    getRepository(name, connection) {
+        return this.repositories.get(name)?.get(connection);
+    }
 }
-exports.castAllObjectId = castAllObjectId;
+exports.repositoryLocator = new RepositoryLocator();
+function getObjectId(value) {
+    if (mongoose_1.isValidObjectId(value))
+        return value;
+    if (mongoose_1.isValidObjectId(value?.id))
+        return value.id;
+    if (mongoose_1.isValidObjectId(value?._id))
+        return value._id;
+    return false;
+}
+exports.getObjectId = getObjectId;
 class Repository {
     constructor(connection) {
         this.connection = connection || this.connection;
@@ -70,6 +68,7 @@ class Repository {
                 return queryOnly;
             }),
         };
+        exports.repositoryLocator.registerRepository(this);
     }
     #cached;
     // Soft delete query
@@ -85,29 +84,9 @@ class Repository {
     get onlySoftDeleteQuery() {
         return this.#cached.onlySoftDeleteQuery(this.schema);
     }
-    // End soft delete only
-    makeDefaultContextList(context = {}) {
-        context.page = context.page || 1;
-        context.pageSize = context.pageSize || 100;
-        context.limit = context.limit || context.pageSize;
-        context.skip = context.skip || context.limit * (context.page - 1);
-        context.softDelete = this.hasSoftDelete
-            ? context.softDelete ?? "ignore"
-            : undefined;
-    }
-    makeDefaultContextFindOne(context = {}) {
-        context.softDelete = this.hasSoftDelete
-            ? context.softDelete ?? "ignore"
-            : undefined;
-    }
-    castObjectIdForEntity(data) {
-        return castAllObjectId(this.schema, data);
-    }
-    makeDefaultContextUpdate(context = {}) {
-        this.castObjectIdForEntity(context.data);
-        context.new = context.new ?? true;
-    }
-    async list(context = {}) {
+    handleQuerySoftDelete(context) {
+        if (!this.hasSoftDelete)
+            return context;
         // Ignore soft delete document
         if (context.softDelete === "ignore") {
             context.query = {
@@ -119,6 +98,165 @@ class Repository {
                 $and: [context.query || {}, this.onlySoftDeleteQuery],
             };
         }
+        return context;
+    }
+    makeDefaultContextList(context = {}) {
+        context.page = context.page || 1;
+        context.pageSize = context.pageSize || 100;
+        context.limit = context.limit || context.pageSize;
+        context.skip = context.skip || context.limit * (context.page - 1);
+    }
+    setOwnerOnUpdate(context, path = "data") {
+        if (this.schema.__options.owner &&
+            this.model.schema.path("updatedBy") &&
+            lodash_1.default.has(context, "meta.user")) {
+            lodash_1.default.set(context, path + ".updatedBy", context.meta.user.id);
+        }
+    }
+    setOwnerOnCreate(context, path = "data") {
+        if (this.schema.__options.owner &&
+            this.model.schema.path("createdBy") &&
+            lodash_1.default.has(context, "meta.user")) {
+            lodash_1.default.set(context, path + ".createdBy", context.meta.user.id);
+            lodash_1.default.set(context, path + ".updatedBy", context.meta.user.id);
+        }
+    }
+    async cascadeCreateOrUpdate(ctx) {
+        const data = ctx.data;
+        const cascadeTasks = [];
+        const getReferenceModel = async (options) => {
+            if (options.ref)
+                return options.ref;
+            if (options.refPath) {
+                let refPath = lodash_1.default.get(data, options.refPath);
+                if (!refPath && getObjectId(data))
+                    refPath = lodash_1.default.get(await this.model.findById(getObjectId(data)), options.refPath);
+            }
+        };
+        const handleCascade = (path, options, fieldValue) => {
+            const objectId = getObjectId(fieldValue);
+            if (!(options.cascade ?? true))
+                return; // ignore if cascade false
+            if (getObjectId(data) && !(options.cascadeOnUpdate ?? true))
+                return; // ignore cascade on update
+            if (!getObjectId(data) && !(options.cascadeOnCreate ?? true))
+                return; // ignore cascade on create
+            if (mongoose_1.isValidObjectId(fieldValue))
+                return; // ignore if fieldValue is ObjectIs
+            if (getObjectId(fieldValue)) {
+                // update sub document
+                cascadeTasks.push(async () => {
+                    const modelName = await getReferenceModel(options);
+                    if (modelName) {
+                        await exports.repositoryLocator
+                            .getRepository(modelName, this.connection)
+                            ?.updateOne({
+                            query: { _id: objectId },
+                            data: fieldValue,
+                            ...lodash_1.default.pick(ctx, "meta", "session", "new"),
+                        });
+                        lodash_1.default.set(data, path, objectId);
+                    }
+                });
+            }
+            else {
+                // create sub document
+                cascadeTasks.push(async () => {
+                    const modelName = await getReferenceModel(options);
+                    if (modelName) {
+                        const doc = await exports.repositoryLocator
+                            .getRepository(modelName, this.connection)
+                            ?.create({
+                            data: fieldValue,
+                            ...lodash_1.default.pick(ctx, "meta", "session"),
+                        });
+                        lodash_1.default.set(data, path, doc.id);
+                    }
+                });
+            }
+        };
+        this.schema.eachPath((path, type) => {
+            let fieldValue;
+            if (type.instance === "ObjectID" && (fieldValue = lodash_1.default.get(data, path))) {
+                if (type.cascade) {
+                    handleCascade(path, type, fieldValue);
+                }
+                else {
+                    lodash_1.default.set(data, path, getObjectId(fieldValue));
+                }
+                return;
+            }
+            // Array refs
+            if (type.instance === "Array" &&
+                type.caster.instance === "ObjectID" &&
+                Array.isArray((fieldValue = lodash_1.default.get(data, path)))) {
+                const options = { ...type.options, ...type.caster.options };
+                if (options.cascade) {
+                    fieldValue.forEach((item, index) => handleCascade(path + "." + index, options, item));
+                }
+                else {
+                    fieldValue.forEach((item, index) => lodash_1.default.set(data, path + "." + index, getObjectId(item)));
+                }
+            }
+        });
+        await Promise.all(cascadeTasks.map((t) => t()));
+        return data;
+    }
+    async cascadeDelete(entity, ctx) {
+        const data = entity;
+        const cascadeTasks = [];
+        const getReferenceModel = async (options) => {
+            if (options.ref)
+                return options.ref;
+            if (options.refPath) {
+                let refPath = lodash_1.default.get(data, options.refPath);
+                if (!refPath && getObjectId(data))
+                    refPath = lodash_1.default.get(await this.model.findById(getObjectId(data)), options.refPath);
+            }
+        };
+        const handleCascade = (options, fieldValue) => {
+            if (!(options.cascade ?? true))
+                return; // ignore if cascade false
+            if (!(options.cascadeOnDelete ?? true))
+                return; // ignore cascade on create
+            if (!mongoose_1.isValidObjectId(fieldValue) && !Array.isArray(fieldValue))
+                return; // ignore if fieldValue is not is ObjectId
+            if (getObjectId(fieldValue)) {
+                // update sub document
+                cascadeTasks.push(async () => {
+                    const modelName = await getReferenceModel(options);
+                    if (modelName) {
+                        return exports.repositoryLocator
+                            .getRepository(modelName, this.connection)
+                            ?.delete({
+                            query: { _id: fieldValue },
+                            ...lodash_1.default.pick(ctx, "meta", "session"),
+                        });
+                    }
+                });
+            }
+        };
+        this.schema.eachPath((path, type) => {
+            let fieldValue;
+            if (type.instance === "ObjectID" && (fieldValue = lodash_1.default.get(data, path))) {
+                handleCascade(type, fieldValue);
+                return;
+            }
+            // Array refs
+            if (type.instance === "Array" &&
+                type.caster.instance === "ObjectID" &&
+                Array.isArray((fieldValue = lodash_1.default.get(data, path)))) {
+                const options = { ...type.options, ...type.caster.options };
+                handleCascade(options, fieldValue);
+            }
+        });
+        await Promise.all(cascadeTasks.map((t) => t()));
+        return data;
+    }
+    async list(context = {}) {
+        utils_1.parseMongoQuery(context.query);
+        this.handleQuerySoftDelete(context);
+        this.makeDefaultContextList(context); // defaultContextList
         const queryBuilder = this.model.find(context.query, undefined, lodash_1.default.omitBy(lodash_1.default.pick(context, ["skip", "limit", "projection", "sort", "session"]), lodash_1.default.isNil));
         Repository.populate(queryBuilder, context.populates);
         if (context.select) {
@@ -139,17 +277,9 @@ class Repository {
         };
     }
     async find(context = {}) {
-        // Ignore soft delete document
-        if (context.softDelete === "ignore") {
-            context.query = {
-                $and: [context.query || {}, this.ignoreSoftDeleteQuery],
-            };
-        }
-        if (context.softDelete === "only") {
-            context.query = {
-                $and: [context.query || {}, this.onlySoftDeleteQuery],
-            };
-        }
+        utils_1.parseMongoQuery(context.query);
+        this.handleQuerySoftDelete(context);
+        this.makeDefaultContextList(context); // defaultContextList
         const queryBuilder = this.model.find(context.query, undefined, lodash_1.default.omitBy(lodash_1.default.pick(context, ["skip", "limit", "projection", "sort", "session"]), lodash_1.default.isNil));
         Repository.populate(queryBuilder, context.populates);
         if (context.select) {
@@ -158,17 +288,8 @@ class Repository {
         return queryBuilder.exec();
     }
     findOne(context = {}) {
-        // Ignore soft delete document
-        if (context.softDelete === "ignore") {
-            context.query = {
-                $and: [context.query || {}, this.ignoreSoftDeleteQuery],
-            };
-        }
-        if (context.softDelete === "only") {
-            context.query = {
-                $and: [context.query || {}, this.onlySoftDeleteQuery],
-            };
-        }
+        utils_1.parseMongoQuery(context.query);
+        this.handleQuerySoftDelete(context);
         const queryBuilder = this.model.findOne(context.query, undefined, lodash_1.default.omitBy(lodash_1.default.pick(context, ["projection", "session"]), lodash_1.default.isNil));
         Repository.populate(queryBuilder, context.populates);
         if (context.select) {
@@ -179,6 +300,8 @@ class Repository {
     async create(context) {
         let options = lodash_1.default.omitBy({ session: context.session }, lodash_1.default.isNil);
         options = lodash_1.default.isEmpty(options) ? undefined : options;
+        await this.cascadeCreateOrUpdate(context);
+        this.setOwnerOnCreate(context);
         return this.model.create(context.data, options).then((doc) => {
             if (context.populates?.length) {
                 return Repository.populate(this.model.findById(doc.id), context.populates);
@@ -186,12 +309,22 @@ class Repository {
             return doc;
         });
     }
-    createMany(context = {}) {
+    async createMany(context = {}) {
         let options = lodash_1.default.omitBy({ session: context.session }, lodash_1.default.isNil);
         options = lodash_1.default.isEmpty(options) ? undefined : options;
+        const cascadeTasks = [];
+        context.data.forEach((item, index) => {
+            cascadeTasks.push(this.cascadeCreateOrUpdate(context));
+            this.setOwnerOnCreate(context, `data.${index}`);
+        });
+        await Promise.all(cascadeTasks);
         return this.model.create(context.data, options);
     }
-    update(context) {
+    async update(context) {
+        context.new = context.new ?? true;
+        utils_1.parseMongoQuery(context.query);
+        this.setOwnerOnUpdate(context);
+        await this.cascadeCreateOrUpdate(context);
         if (context.new) {
             return this.model
                 .find(context.query, undefined, { projection: "id" })
@@ -205,13 +338,27 @@ class Repository {
             return this.model.updateMany(context.query, context.data, lodash_1.default.omitBy({ session: context.session }, lodash_1.default.isNil));
         }
     }
-    updateOne(context) {
+    async updateOne(context) {
+        context.new = context.new ?? true;
+        utils_1.parseMongoQuery(context.query);
+        this.setOwnerOnUpdate(context);
+        await this.cascadeCreateOrUpdate(context);
         return Repository.populate(this.model.findOneAndUpdate(context.query, context.data, lodash_1.default.omitBy(lodash_1.default.pick(context, ["projecton", "session", "new"]), lodash_1.default.isNil)), context.populates);
     }
-    delete(context) {
-        return this.model.deleteMany(context.query, lodash_1.default.omitBy({ session: context.session }, lodash_1.default.isNil));
+    async delete(context) {
+        utils_1.parseMongoQuery(context.query);
+        const entites = await this.model.find(context.query);
+        const result = await this.model.deleteMany(context.query, lodash_1.default.omitBy({ session: context.session }, lodash_1.default.isNil));
+        try {
+            await Promise.all(entites.map((entity) => this.cascadeDelete(entity, context)));
+        }
+        catch (error) {
+            console.log(this.name, "cascade delete error", error);
+        }
+        return result;
     }
     softDelete(context) {
+        utils_1.parseMongoQuery(context.query);
         const deleteDatePaths = lodash_1.default.pickBy(this.schema.paths, (value) => lodash_1.default.get(value, "options.columnType") === "deleteDate");
         if (lodash_1.default.isEmpty(deleteDatePaths)) {
             throw new Error("Cannot find at least field typeof deleteDate");
@@ -223,6 +370,7 @@ class Repository {
         return this.model.updateMany(context.query, update, { new: true });
     }
     restoreSoftDelete(context) {
+        utils_1.parseMongoQuery(context.query);
         const deleteDatePaths = lodash_1.default.pickBy(this.schema.paths, (value) => lodash_1.default.get(value, "options.columnType") === "deleteDate");
         if (lodash_1.default.isEmpty(deleteDatePaths)) {
             throw new Error("Cannot find at least field typeof deleteDate");
@@ -232,14 +380,6 @@ class Repository {
             lodash_1.default.set(update, key, null);
         });
         return this.model.updateMany(context.query, update, { new: true });
-    }
-    coreBeforeCreate(context) {
-        // cast ObjectId
-        this.castObjectIdForEntity(context.data);
-        if (this.model.schema.path("createdBy") && lodash_1.default.has(context, "meta.user")) {
-            lodash_1.default.set(context, "data.createdBy", context.meta.user.id);
-            lodash_1.default.set(context, "data.updatedBy", context.meta.user.id);
-        }
     }
     static populate(query, populate) {
         if (populate) {
@@ -293,15 +433,6 @@ class Repository {
     }
 }
 __decorate([
-    decorator_1.Hook("before", ["list", "find"])
-], Repository.prototype, "makeDefaultContextList", null);
-__decorate([
-    decorator_1.Hook("before", ["findOne"])
-], Repository.prototype, "makeDefaultContextFindOne", null);
-__decorate([
-    decorator_1.Hook("before", ["update", "updateOne"])
-], Repository.prototype, "makeDefaultContextUpdate", null);
-__decorate([
     decorator_1.RepoAction
 ], Repository.prototype, "list", null);
 __decorate([
@@ -331,7 +462,4 @@ __decorate([
 __decorate([
     decorator_1.RepoAction
 ], Repository.prototype, "restoreSoftDelete", null);
-__decorate([
-    decorator_1.Hook("before", ["create"])
-], Repository.prototype, "coreBeforeCreate", null);
 exports.Repository = Repository;

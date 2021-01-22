@@ -64,6 +64,8 @@ function createSchema(EntityClass) {
             schema.index(indexSetting.fields, indexSetting.options);
         });
     }
+    lodash_1.default.set(schema, "__options", options);
+    lodash_1.default.set(schema, "__schemaDefinition", schemaDefinition);
     return schema;
 }
 exports.createSchema = createSchema;

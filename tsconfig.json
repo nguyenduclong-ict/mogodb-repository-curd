@@ -10,6 +10,7 @@
     "baseUrl": "./src",
     "strict": true,
     "strictNullChecks": false,
+    "skipLibCheck": true,
     "types": ["reflect-metadata", "node"]
   },
   "exclude": ["node_modules"],

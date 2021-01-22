@@ -1,5 +1,5 @@
 import { Document, Schema, SchemaTypes } from "mongoose";
-import { EntityOptions, FieldType } from "./interface";
+import { CustomSchema, EntityOptions, FieldType } from "./interface";
 import _ from "./utils/lodash";
 
 export function Field(config: FieldType | FieldType[] = { type: String }) {
@@ -30,7 +30,7 @@ export function Entity<E = any>(options: EntityOptions<E> = {}) {
   };
 }
 
-export function createSchema<E = any>(EntityClass: any) {
+export function createSchema<E = any>(EntityClass: any): CustomSchema {
   const schemaDefinition: any = {};
   Reflect.getOwnMetadataKeys(EntityClass).forEach((key: string) => {
     if (!key.startsWith("^"))
@@ -69,6 +69,9 @@ export function createSchema<E = any>(EntityClass: any) {
       schema.index(indexSetting.fields, indexSetting.options);
     });
   }
+
+  _.set(schema, "__options", options);
+  _.set(schema, "__schemaDefinition", schemaDefinition);
 
   return schema;
 }

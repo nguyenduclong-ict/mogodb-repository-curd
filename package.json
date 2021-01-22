@@ -1,6 +1,6 @@
 {
   "name": "mongodb-repository-crud",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "description": "Helper for mongoose",
   "main": "dist/index.js",
   "author": "Nguyen Duc Long",

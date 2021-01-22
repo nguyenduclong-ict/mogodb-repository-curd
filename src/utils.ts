@@ -75,3 +75,11 @@ export function transformContext<T = any, M = any>(
     meta: context.meta,
   };
 }
+
+export function parseMongoQuery(query: any) {
+  if (query.id) {
+    query._id = query.id;
+    delete query.id;
+  }
+  return query;
+}

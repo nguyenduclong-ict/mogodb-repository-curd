@@ -1,6 +1,3 @@
-import { Reference } from "interface";
-import { Document, SchemaTypes } from "mongoose";
-import { validateEntity } from "../validate";
 import {
   createConnection,
   createSchema,
@@ -8,7 +5,11 @@ import {
   Field,
   Inject,
   Repository,
+  Document,
+  SchemaTypes,
+  Reference,
 } from "../index";
+import { validateEntity } from "../validate";
 
 const connection = createConnection({
   dbName: "demo",
@@ -53,22 +54,18 @@ class PostRepository extends Repository<Post> {}
 (async () => {
   const postRepository = new PostRepository();
   const userRepository = new UserRepository();
-
   const post = await postRepository.create({
     data: {
       title: `good morning ${Math.floor(Math.random() * 1000)}!`,
       content: "A good day",
     },
   });
-
   const userData = {
     username: "longnd-" + Math.floor(Math.random() * 1000),
     post: [post.id, post.id, post.id, "123"],
   };
-
   const validate = await validateEntity(User, userData);
   console.log(validate);
-
   if (validate.valid) {
     const user = await userRepository.create({ data: userData });
     console.log(post, user);

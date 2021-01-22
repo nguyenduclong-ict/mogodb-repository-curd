@@ -1,5 +1,5 @@
 import { RuleItem } from "async-validator";
-import { DocumentDefinition, FilterQuery, ObjectId, Schema, SchemaOptions, SchemaType, SchemaTypeOpts, UpdateQuery } from "mongoose";
+import { Document, DocumentDefinition, FilterQuery, Schema, SchemaOptions, SchemaType, SchemaTypeOpts, UpdateQuery } from "mongoose";
 export declare type LiteralUnion<T extends U, U = string> = T | (U & {});
 export declare type HookItem = {
     handler: string;
@@ -23,8 +23,8 @@ export interface ContextUpdate<T = any, M = any> extends RepositoryContext<T, M>
 }
 export interface FindOptions<T> {
     query?: FilterQuery<T>;
-    populates?: LiteralUnion<keyof T, string | number | symbol>[] | {
-        path: LiteralUnion<keyof T, string | number | symbol>;
+    populates?: LiteralUnion<Exclude<keyof DocumentDefinition<T>, "_id" | "id" | "__v">, string | number | symbol>[] | {
+        path: LiteralUnion<Exclude<keyof DocumentDefinition<T>, "_id" | "id" | "__v">, string | number | symbol>;
         select?: string;
         model?: string;
         populate?: FindOptions<T>["populates"];
@@ -83,12 +83,15 @@ export interface ListResponse<D = any> {
     pageSize: number;
     total: number;
 }
-export declare type Reference<E> = Partial<E & ObjectId & string>;
+export declare type Reference<E extends Document> = DocumentDefinition<E> | string;
 export declare type FieldType = (SchemaTypeOpts<any> | Schema | SchemaType) & {
     ref?: string;
     slug?: any;
     validator?: RuleItem;
     arrayValdator?: RuleItem;
+    cascade?: boolean;
+    cascadeOnCreate?: boolean;
+    cascadeOnUpdate?: boolean;
 };
 export interface RepositoryInject {
     connection?: any;
@@ -116,8 +119,15 @@ export interface IndexSetting<E> {
     };
     options?: IndexOptions;
 }
+export interface CustomSchema extends Schema {
+    __options?: EntityOptions;
+    __schemaDefinition?: {
+        [x: string]: FieldType;
+    };
+}
 export interface EntityOptions<E = any> extends SchemaOptions {
     virtualId?: boolean;
     indexes?: IndexSetting<E>[];
+    owner?: boolean;
 }
 export {};
