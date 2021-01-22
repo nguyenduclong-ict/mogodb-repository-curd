@@ -92,6 +92,7 @@ export declare type FieldType = (SchemaTypeOpts<any> | Schema | SchemaType) & {
     cascade?: boolean;
     cascadeOnCreate?: boolean;
     cascadeOnUpdate?: boolean;
+    cascadeOnDelete?: boolean;
 };
 export interface RepositoryInject {
     connection?: any;

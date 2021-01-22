@@ -86,36 +86,18 @@ const userSchema = createSchema(User);
 export { userSchema };
 ```
 
-```typescript
-// **** Add function validate entity
-import { validateEntity } from "mongodb-repository-crud";
+> Default `@Field` generate field with type = `String`,
 
-// use can add config to @Field({ validator : {...} })
-// I use package async-validator, see more: https://github.com/yiminghe/async-validator
+### Timestamps
 
-...
-const validateResult = await validateEntity(User, { note: "" });
-console.log(validateResult);
-...
-// result
-{
-  valid: false,
-  errors: [
-    { message: 'username is required', field: 'username' },
-    { message: 'deletedAt fails', field: 'deletedAt' }
-  ],
-  fields: { username: [ [Object] ], deletedAt: [ [Object] ] }
-}
-```
-
-> Default `@Field` generate field with type = `String`, option timestamps = true auto generate 2 filed `createdAt` and `updatedAt`, so declare 2 file in class for snippet when typing and not declare @Field for thems
+> Set option timestamps = true auto generate 2 filed `createdAt` and `updatedAt`, so declare 2 file in class for snippet when typing and not declare `@Field` for thems
 
 ### Cascade
 
 > Cascade `create`, `update`, `delete` on reference document.
-> Example:
 
 ```typescript
+// Example:
 @Entity()
 Post {
    @Field({
@@ -146,8 +128,6 @@ comment  = { commentBy: "NguyenDucLong", content: "HIHI" }
 and add comment.id => post.comments
 ```
 
-Check full demo [here](https://github.com/nguyenduclong-ict/mogodb-repository-curd/blob/master/src/test/cascade.test.ts)
-
 ### softDelete
 
 > `@DeleteDateColumn` decorator will declare deleted column. After you can using `repository.softDelete` to softDelete document
@@ -160,13 +140,45 @@ Default action list, find, findOne only return document has not been softDeleted
 
 ```typescript
 // Example
-...
-repository.find({query : {score : 1}, softDelete : 'ignore'}) // return except softDeleted
+repository.find({ query: { score: 1 }, softDelete: "ignore" }); // return except softDeleted
+repository.find({ query: { score: 1 }, softDelete: "only" }); // return only softDeleted
+repository.find({ query: { score: 1 }, softDelete: "all" }); // return all document
+```
 
-repository.find({query : {score : 1}, softDelete : 'only'}) // return only softDeleted
+```typescript
+// support options
+@Field({...,
+  cascade: true,  // allow cascade
+  cascadeOnCreate: true, // allow cascade on create
+  cascadeOnUpdate: false, // disable cascade on update
+  cascadeOnDelete: true // cascade delete subdocument
+})
+```
 
-repository.find({query : {score : 1}, softDelete : 'all'}) // return all document
+Check full demo [here](https://github.com/nguyenduclong-ict/mogodb-repository-curd/blob/master/src/test/cascade.test.ts)
+
+### Validate
+
+```typescript
+// **** Add function validate entity
+import { validateEntity } from "mongodb-repository-crud";
+
+// use can add config to @Field({ validator : {...} }
+// I use package async-validator, see more: https://github.com/yiminghe/async-validator
+
 ...
+const validateResult = await validateEntity(User, { note: "" });
+console.log(validateResult);
+...
+// result
+{
+  valid: false,
+  errors: [
+    { message: 'username is required', field: 'username' },
+    { message: 'deletedAt fails', field: 'deletedAt' }
+  ],
+  fields: { username: [ [Object] ], deletedAt: [ [Object] ] }
+}
 ```
 
 ### Step 2 - Create Repository
@@ -226,29 +238,27 @@ async function test() {
   // ...
   const userRepository = new UserRepository();
   const data = await userRepository.list();
-
-  console.log(data);
-
-  //   {
-  //     data: [
-  //       {
-  //         _id: "5fef6d52e8ae0020ffe8c508",
-  //         username: "nobita",
-  //         deletedAt: null,
-  //         createdAt: "2021-01-01T18:43:30.568Z",
-  //         updatedAt: "2021-01-01T18:45:04.617Z",
-  //         age: 10,
-  //         __v: 0,
-  //       },
-  //     ],
-  //     limit: 100,
-  //     skip: 0,
-  //     page: 1,
-  //     totalPages: 1,
-  //     pageSize: 100,
-  //     total: 1,
-  //   };
+  // => data:
+  {
+    data: [
+      {
+        _id: "5fef6d52e8ae0020ffe8c508",
+        username: "nobita",
+        deletedAt: null,
+        createdAt: "2021-01-01T18:43:30.568Z",
+        updatedAt: "2021-01-01T18:45:04.617Z",
+        age: 10,
+        __v: 0,
+      },
+    ],
+    limit: 100,
+    skip: 0,
+    page: 1,
+    totalPages: 1,
+    pageSize: 100,
+    total: 1,
+  };
 }
 ```
 
-> Thanks for read
+> Thanks for read, star me if it useful
