@@ -174,6 +174,7 @@ export class Repository<E extends Document> {
     };
 
     const handleCascade = (path: string, options: any, fieldValue: any) => {
+      console.log(path, options, fieldValue);
       const objectId = getObjectId(fieldValue);
       if (!(options.cascade ?? true)) return; // ignore if cascade false
       if (getObjectId(data) && !(options.cascadeOnUpdate ?? true)) return; // ignore cascade on update
@@ -215,8 +216,8 @@ export class Repository<E extends Document> {
     this.schema.eachPath((path, type: any) => {
       let fieldValue: any;
       if (type.instance === "ObjectID" && (fieldValue = _.get(data, path))) {
-        if (type.cascade) {
-          handleCascade(path, type, fieldValue);
+        if (type.options.cascade) {
+          handleCascade(path, type.options, fieldValue);
         } else {
           _.set(data, path, getObjectId(fieldValue));
         }
@@ -378,8 +379,8 @@ export class Repository<E extends Document> {
   async create(context: ContextCreate<E>): Promise<E> {
     let options: any = _.omitBy({ session: context.session }, _.isNil);
     options = _.isEmpty(options) ? undefined : options;
-    await this.cascadeCreateOrUpdate(context);
     this.setOwnerOnCreate(context);
+    await this.cascadeCreateOrUpdate(context);
     return this.model.create(context.data as any, options).then((doc: any) => {
       if (context.populates?.length) {
         return Repository.populate(
@@ -396,10 +397,17 @@ export class Repository<E extends Document> {
     let options: any = _.omitBy({ session: context.session }, _.isNil);
     options = _.isEmpty(options) ? undefined : options;
     const cascadeTasks: any[] = [];
-    context.data.forEach((item, index) => {
+    if (Array.isArray(context.data)) {
+      context.data?.forEach((item, index) => {
+        this.setOwnerOnCreate(context, `data.${index}`);
+        cascadeTasks.push(
+          this.cascadeCreateOrUpdate({ ...context, data: context.data[index] })
+        );
+      });
+    } else {
+      this.setOwnerOnCreate(context, "data");
       cascadeTasks.push(this.cascadeCreateOrUpdate(context));
-      this.setOwnerOnCreate(context, `data.${index}`);
-    });
+    }
     await Promise.all(cascadeTasks);
     return this.model.create(context.data as any, options) as any;
   }

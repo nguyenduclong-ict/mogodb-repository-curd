@@ -83,7 +83,7 @@ export interface ListResponse<D = any> {
     pageSize: number;
     total: number;
 }
-export declare type Reference<E extends Document> = DocumentDefinition<E> | string;
+export declare type Reference<E extends Document> = Omit<E, keyof Document>;
 export declare type FieldType = (SchemaTypeOpts<any> | Schema | SchemaType) & {
     ref?: string;
     slug?: any;

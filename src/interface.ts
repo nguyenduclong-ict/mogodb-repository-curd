@@ -3,9 +3,7 @@ import {
   Document,
   DocumentDefinition,
   FilterQuery,
-  ObjectId,
   Schema,
-  SchemaDefinition,
   SchemaOptions,
   SchemaType,
   SchemaTypeOpts,
@@ -101,7 +99,7 @@ export interface ListResponse<D = any> {
   total: number;
 }
 
-export type Reference<E extends Document> = DocumentDefinition<E> | string;
+export type Reference<E extends Document> = Omit<E, keyof Document>;
 
 export type FieldType = (SchemaTypeOpts<any> | Schema | SchemaType) & {
   ref?: string;

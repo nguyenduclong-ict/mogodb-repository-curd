@@ -134,6 +134,7 @@ class Repository {
             }
         };
         const handleCascade = (path, options, fieldValue) => {
+            console.log(path, options, fieldValue);
             const objectId = getObjectId(fieldValue);
             if (!(options.cascade ?? true))
                 return; // ignore if cascade false
@@ -178,8 +179,8 @@ class Repository {
         this.schema.eachPath((path, type) => {
             let fieldValue;
             if (type.instance === "ObjectID" && (fieldValue = lodash_1.default.get(data, path))) {
-                if (type.cascade) {
-                    handleCascade(path, type, fieldValue);
+                if (type.options.cascade) {
+                    handleCascade(path, type.options, fieldValue);
                 }
                 else {
                     lodash_1.default.set(data, path, getObjectId(fieldValue));
@@ -300,8 +301,8 @@ class Repository {
     async create(context) {
         let options = lodash_1.default.omitBy({ session: context.session }, lodash_1.default.isNil);
         options = lodash_1.default.isEmpty(options) ? undefined : options;
-        await this.cascadeCreateOrUpdate(context);
         this.setOwnerOnCreate(context);
+        await this.cascadeCreateOrUpdate(context);
         return this.model.create(context.data, options).then((doc) => {
             if (context.populates?.length) {
                 return Repository.populate(this.model.findById(doc.id), context.populates);
@@ -313,10 +314,16 @@ class Repository {
         let options = lodash_1.default.omitBy({ session: context.session }, lodash_1.default.isNil);
         options = lodash_1.default.isEmpty(options) ? undefined : options;
         const cascadeTasks = [];
-        context.data.forEach((item, index) => {
+        if (Array.isArray(context.data)) {
+            context.data?.forEach((item, index) => {
+                this.setOwnerOnCreate(context, `data.${index}`);
+                cascadeTasks.push(this.cascadeCreateOrUpdate({ ...context, data: context.data[index] }));
+            });
+        }
+        else {
+            this.setOwnerOnCreate(context, "data");
             cascadeTasks.push(this.cascadeCreateOrUpdate(context));
-            this.setOwnerOnCreate(context, `data.${index}`);
-        });
+        }
         await Promise.all(cascadeTasks);
         return this.model.create(context.data, options);
     }

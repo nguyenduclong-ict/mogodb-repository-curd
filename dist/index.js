@@ -10,9 +10,10 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Document = exports.SchemaTypes = exports.createSchema = exports.Field = exports.Entity = exports.DeleteDateColumn = exports.Repository = void 0;
+exports.Document = exports.SchemaTypes = exports.Repository = exports.getObjectId = exports.createSchema = exports.Field = exports.Entity = exports.DeleteDateColumn = void 0;
 const repository_1 = require("./repository");
 Object.defineProperty(exports, "Repository", { enumerable: true, get: function () { return repository_1.Repository; } });
+Object.defineProperty(exports, "getObjectId", { enumerable: true, get: function () { return repository_1.getObjectId; } });
 const schema_1 = require("./schema");
 Object.defineProperty(exports, "createSchema", { enumerable: true, get: function () { return schema_1.createSchema; } });
 Object.defineProperty(exports, "DeleteDateColumn", { enumerable: true, get: function () { return schema_1.DeleteDateColumn; } });
