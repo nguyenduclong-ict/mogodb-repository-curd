@@ -134,7 +134,6 @@ class Repository {
             }
         };
         const handleCascade = (path, options, fieldValue) => {
-            console.log(path, options, fieldValue);
             const objectId = getObjectId(fieldValue);
             if (!(options.cascade ?? true))
                 return; // ignore if cascade false

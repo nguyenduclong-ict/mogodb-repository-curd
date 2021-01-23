@@ -174,7 +174,6 @@ export class Repository<E extends Document> {
     };
 
     const handleCascade = (path: string, options: any, fieldValue: any) => {
-      console.log(path, options, fieldValue);
       const objectId = getObjectId(fieldValue);
       if (!(options.cascade ?? true)) return; // ignore if cascade false
       if (getObjectId(data) && !(options.cascadeOnUpdate ?? true)) return; // ignore cascade on update
