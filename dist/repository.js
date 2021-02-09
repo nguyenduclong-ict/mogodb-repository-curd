@@ -40,6 +40,10 @@ function getObjectId(value) {
 exports.getObjectId = getObjectId;
 class Repository {
     constructor(connection) {
+        this.hooks = {
+            before: {},
+            after: {},
+        };
         this.connection = connection || this.connection;
         if (!this.name) {
             this.name = this.constructor.name.replace(/Repository$/, "");

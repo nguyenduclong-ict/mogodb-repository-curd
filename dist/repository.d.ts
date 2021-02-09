@@ -14,6 +14,10 @@ export declare class Repository<E extends Document> {
     connection: Connection;
     schema: CustomSchema;
     model: Model<E>;
+    protected hooks: {
+        before: {};
+        after: {};
+    };
     constructor(connection?: Connection);
     protected get softDeletePaths(): any;
     protected get hasSoftDelete(): boolean;

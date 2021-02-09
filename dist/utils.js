@@ -5,8 +5,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.parseMongoQuery = exports.transformContext = exports.createConnection = exports.createMongoUri = exports.waterFallPromises = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
-function waterFallPromises(promises) {
-    return promises.reduce((prev, curr) => prev.then((prevResult) => curr(prevResult)), Promise.resolve());
+async function waterFallPromises(promises) {
+    let result;
+    for (const func of promises) {
+        result = await func(result);
+    }
+    return result;
 }
 exports.waterFallPromises = waterFallPromises;
 function createMongoUri(options) {

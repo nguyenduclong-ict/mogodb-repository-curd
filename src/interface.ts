@@ -14,7 +14,15 @@ export type LiteralUnion<T extends U, U = string> = T | (U & {});
 export type HookItem = { handler: string; priority: number };
 export type Trigger = "before" | "after";
 export type HookAction = LiteralUnion<
-  "list" | "find" | "findOne" | "create" | "update" | "delete" | "softDelete"
+  | "list"
+  | "find"
+  | "findOne"
+  | "create"
+  | "update"
+  | "delete"
+  | "softDelete"
+  | "updateOne"
+  | "restoreSoftDelete"
 >;
 
 export interface RepositoryContext<T = any, M = any> extends FindOptions<T> {
@@ -99,7 +107,9 @@ export interface ListResponse<D = any> {
   total: number;
 }
 
-export type Reference<E extends Document> = Omit<E, keyof Document>;
+export type Reference<E extends Document> = Omit<E, keyof Document> & {
+  id?: any;
+};
 
 export type FieldType = (SchemaTypeOpts<any> | Schema | SchemaType) & {
   ref?: string;

@@ -1,11 +1,12 @@
 import mongoose from "mongoose";
 import { RepositoryContext } from "./interface";
 
-export function waterFallPromises(promises: any[]) {
-  return promises.reduce(
-    (prev: any, curr: any) => prev.then((prevResult: any) => curr(prevResult)),
-    Promise.resolve()
-  );
+export async function waterFallPromises(promises: any[]) {
+  let result;
+  for (const func of promises) {
+    result = await func(result);
+  }
+  return result;
 }
 
 interface UriOption {

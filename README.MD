@@ -1,3 +1,7 @@
+## Deprecated!
+
+replace to [mongoose-orm](https://www.npmjs.com/package/mongoose-orm)
+
 ```bash
 npm i --save mongodb-repository-crud
 ```

@@ -6,7 +6,7 @@ export declare type HookItem = {
     priority: number;
 };
 export declare type Trigger = "before" | "after";
-export declare type HookAction = LiteralUnion<"list" | "find" | "findOne" | "create" | "update" | "delete" | "softDelete">;
+export declare type HookAction = LiteralUnion<"list" | "find" | "findOne" | "create" | "update" | "delete" | "softDelete" | "updateOne" | "restoreSoftDelete">;
 export interface RepositoryContext<T = any, M = any> extends FindOptions<T> {
     meta?: M & {
         [x: string]: any;
@@ -83,7 +83,9 @@ export interface ListResponse<D = any> {
     pageSize: number;
     total: number;
 }
-export declare type Reference<E extends Document> = Omit<E, keyof Document>;
+export declare type Reference<E extends Document> = Omit<E, keyof Document> & {
+    id?: any;
+};
 export declare type FieldType = (SchemaTypeOpts<any> | Schema | SchemaType) & {
     ref?: string;
     slug?: any;

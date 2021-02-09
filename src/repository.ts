@@ -43,6 +43,10 @@ export class Repository<E extends Document> {
   schema: CustomSchema;
   model: Model<E>;
   #cached: any;
+  protected hooks = {
+    before: {},
+    after: {},
+  };
 
   constructor(connection?: Connection) {
     this.connection = connection || this.connection;
